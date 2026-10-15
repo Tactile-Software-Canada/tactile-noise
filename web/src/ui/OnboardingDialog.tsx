@@ -117,7 +117,7 @@ export function OnboardingDialog({ open, onClose, onComplete, engine, currentSou
               <div class="onboarding-slide" data-slide="1">
                 <div class="onboarding-pill">Interactive Preview</div>
                 <h2 id="onboarding-title" class="onboarding-headline">
-                  14 Handcrafted Soundscapes
+                  14 Soundscapes
                 </h2>
                 <p class="onboarding-desc">
                   From clinical pink and brown noise to organic nature and gentle mechanical tones.
@@ -167,11 +167,9 @@ export function OnboardingDialog({ open, onClose, onComplete, engine, currentSou
 
             {step === 1 && (
               <div class="onboarding-slide" data-slide="2">
-                <div class="onboarding-pill">Personalized Comfort</div>
                 <h2 id="onboarding-title" class="onboarding-headline">
                   Crafted for your daily routine
                 </h2>
-                <p class="onboarding-desc">Tactile Noise adapts smoothly to however you listen:</p>
 
                 <div class="onboarding-features-list">
                   <div class="onboarding-feature-item">
@@ -214,29 +212,6 @@ export function OnboardingDialog({ open, onClose, onComplete, engine, currentSou
                       <p>
                         Fades volume down progressively over up to 5 minutes so you never wake with
                         a start.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div class="onboarding-feature-item">
-                    <div class="onboarding-feature-icon" aria-hidden="true">
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="20"
-                        height="20"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
-                        <line x1="12" y1="18" x2="12.01" y2="18" />
-                      </svg>
-                    </div>
-                    <div>
-                      <strong>Lock Screen & Shortcuts</strong>
-                      <p>
-                        Controls stay accessible on lock screen and media keyboards even in the
-                        background.
                       </p>
                     </div>
                   </div>

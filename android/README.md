@@ -139,7 +139,7 @@ Navigate to **Grow** → **Store presence** → **Main store listing**:
   > Unlike apps that loop short audio clips, Tactile Noise generates all fourteen sounds in real time using on-device procedural digital signal processing (DSP). You will never hear an unnatural audio loop seam, click, or repetitive pattern.
   >
   > FEATURES:
-  > • 14 Handcrafted Ambient Sounds:
+  > • 14 Ambient Sounds:
   >   - Noise: Balanced (Pink), Bright (White), Dark (Brown), Grey (inverse equal-loudness)
   >   - Nature: Rain, Ocean waves, Mountain Stream, Wind, Night crickets, Campfire
   >   - Travel & Machines: Box Fan, Steam hiss, Airplane cabin, Passenger train
