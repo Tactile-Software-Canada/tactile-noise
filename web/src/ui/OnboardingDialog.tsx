@@ -117,10 +117,10 @@ export function OnboardingDialog({ open, onClose, onComplete, engine, currentSou
               <div class="onboarding-slide" data-slide="1">
                 <div class="onboarding-pill">Interactive Preview</div>
                 <h2 id="onboarding-title" class="onboarding-headline">
-                  14 Soundscapes
+                  Live Generated Soundscapes
                 </h2>
                 <p class="onboarding-desc">
-                  Tap to preview the live generator:
+                  Tap to preview the live generator
                 </p>
 
                 <div class="onboarding-sound-grid" role="group" aria-label="Sample sounds">
