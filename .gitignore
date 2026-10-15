@@ -1,0 +1,25 @@
+# OS and editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Agent and local notes
+.claude/
+CLAUDE.local.md
+AI/
+
+# Secrets: signing keys and credentials are never committed
+.env
+.env.*
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+key.properties
+
+# Logs
+*.log
+npm-debug.log*

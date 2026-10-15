@@ -1,0 +1,40 @@
+{
+  "name": "ben-gen-web",
+  "private": true,
+  "version": "0.2.0",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 4173 --strictPort",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:golden:update": "UPDATE_GOLDEN=1 vitest run test/dsp/golden.test.ts",
+    "test:e2e": "playwright test",
+    "icons": "node scripts/make-icons.mjs",
+    "screenshots": "node scripts/make-screenshots.mjs",
+    "deploy": "npm run build && wrangler deploy",
+    "deploy:preview": "npm run build && wrangler versions upload --message preview",
+    "calibrate": "vitest run --config scripts/vitest.calibrate.config.ts"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "1.56.1",
+    "@preact/preset-vite": "^2.10.6",
+    "@types/node": "^26.6.5",
+    "playwright-core": "1.56.1",
+    "prettier": "^3.9.10",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^5.0.3",
+    "workbox-window": "^7.4.1",
+    "wrangler": "^4.149.0"
+  },
+  "dependencies": {
+    "preact": "^11.0.1"
+  }
+}

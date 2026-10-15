@@ -1,0 +1,8 @@
+# Always revalidate the service worker and manifest so updates reach installed apps.
+/sw.js
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Cache-Control: no-cache
+/.well-known/assetlinks.json
+  Content-Type: application/json
+  Access-Control-Allow-Origin: *

@@ -1,0 +1,46 @@
+{
+  "packageId": "software.tactile.noise",
+  "host": "noise.tactile.software",
+  "name": "Tactile Noise",
+  "launcherName": "Tactile Noise",
+  "display": "standalone",
+  "themeColor": "#0E1218",
+  "themeColorDark": "#000000",
+  "navigationColor": "#0E1218",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#0E1218",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://noise.tactile.software/icons/icon-512.png",
+  "maskableIconUrl": "https://noise.tactile.software/icons/maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./upload-keystore.jks",
+    "alias": "upload"
+  },
+  "appVersionName": "1.0.1",
+  "appVersionCode": 2,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://noise.tactile.software/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "minSdkVersion": 24,
+  "orientation": "default",
+  "fingerprints": [
+    {
+      "value": "00:7A:00:8A:A8:E2:AC:AB:A3:F7:5D:B8:7A:65:E7:83:9B:8E:0E:8F:8C:85:07:28:1A:7C:28:48:7C:6E:AB:D2"
+    }
+  ],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "displayOverride": []
+}

@@ -1,0 +1,15 @@
+// Cloudflare Worker serving the built PWA as static assets (no server code).
+// Deploy: npm run deploy  (reads CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID from the environment)
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ben-gen",
+  "compatibility_date": "2026-10-01",
+  // The app's real domain. The Android TWA opens it and checks its /.well-known/assetlinks.json.
+  "routes": [{ "pattern": "noise.tactile.software", "custom_domain": true }],
+  // Each uploaded version gets its own preview URL (npm run deploy:preview).
+  "preview_urls": true,
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application",
+  },
+}
