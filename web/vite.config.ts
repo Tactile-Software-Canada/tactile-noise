@@ -3,9 +3,6 @@ import { readFileSync } from 'node:fs'
 import { defineConfig, type Plugin } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
-const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
-  version: string
-}
 // App identity shared with the Android TWA (android/app/build.gradle reads the same file).
 const app = JSON.parse(readFileSync(new URL('../app.config.json', import.meta.url), 'utf8')) as {
   name: string
@@ -13,7 +10,7 @@ const app = JSON.parse(readFileSync(new URL('../app.config.json', import.meta.ur
   description: string
   themeColor: string
   backgroundColor: string
-  android: { packageId: string; sha256CertFingerprints: string[] }
+  android: { packageId: string; versionName: string; sha256CertFingerprints: string[] }
 }
 const buildDate = new Date().toISOString().slice(0, 10)
 
@@ -61,7 +58,7 @@ export default defineConfig({
   // Relative base so the build works from any path (root domain or sub-folder).
   base: './',
   define: {
-    __APP_VERSION__: JSON.stringify(`${pkg.version} (${buildDate})`),
+    __APP_VERSION__: JSON.stringify(`${app.android.versionName} (${buildDate})`),
   },
   plugins: [
     appIdentityHtml(),

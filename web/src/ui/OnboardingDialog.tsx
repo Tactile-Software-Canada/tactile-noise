@@ -120,8 +120,7 @@ export function OnboardingDialog({ open, onClose, onComplete, engine, currentSou
                   14 Soundscapes
                 </h2>
                 <p class="onboarding-desc">
-                  From clinical pink and brown noise to organic nature and gentle mechanical tones.
-                  Tap any sound to hear the live generator:
+                  Tap to preview the live generator:
                 </p>
 
                 <div class="onboarding-sound-grid" role="group" aria-label="Sample sounds">

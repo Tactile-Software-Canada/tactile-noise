@@ -38,6 +38,9 @@
   "fingerprints": [
     {
       "value": "00:7A:00:8A:A8:E2:AC:AB:A3:F7:5D:B8:7A:65:E7:83:9B:8E:0E:8F:8C:85:07:28:1A:7C:28:48:7C:6E:AB:D2"
+    },
+    {
+      "value": "FD:F7:35:7E:3A:B9:3A:87:5E:0D:7C:B0:0A:23:BB:08:3E:19:08:9C:F7:58:5C:41:3F:30:33:32:21:25:B0:D7"
     }
   ],
   "additionalTrustedOrigins": [],
