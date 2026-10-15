@@ -276,7 +276,7 @@ test('first-time onboarding: appears with animated wave background, samples soun
   await expect(dialog.locator('.tactile-wave-svg path animate')).toHaveCount(5)
 
   // Step 1: Interactive sound sampling
-  await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(/14 Handcrafted Soundscapes/)
+  await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(/14 Soundscapes/)
   const rainSample = dialog.getByRole('button', { name: /Rain/ })
   await expect(rainSample).toBeVisible()
 
