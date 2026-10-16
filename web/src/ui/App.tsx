@@ -370,6 +370,7 @@ export function App({ engine, initialSound, forceOnboarding = false }: Props) {
           class="icon-btn"
           aria-label="Settings"
           aria-haspopup="dialog"
+          data-testid="open-settings"
           onClick={() => setSheet('settings')}
         >
           <Icon path={ICONS.settings} />
@@ -384,14 +385,12 @@ export function App({ engine, initialSound, forceOnboarding = false }: Props) {
             statusText={statusText}
             volume={volume}
             withMedia={settings.withMedia}
-            mediaVolume={settings.mediaVolume}
             timerLabel={timerLabel}
             timerActive={remaining !== null}
             canSaveFavorite={settings.favorites.length < MAX_FAVORITES}
             isFavorite={currentFavorite !== null}
             onToggle={toggle}
             onVolume={setVolume}
-            onWithMedia={setWithMedia}
             onOpenTimer={() => setSheet('timer')}
             onOpenAdjust={() => setSheet('adjust')}
             onSaveFavorite={toggleFavorite}
@@ -405,14 +404,23 @@ export function App({ engine, initialSound, forceOnboarding = false }: Props) {
 
         <div class="library">
           {showInstallCard && (
-            <section class="install-card" aria-labelledby="install-title">
+            <section
+              class="install-card"
+              aria-labelledby="install-title"
+              data-testid="install-card"
+            >
               <Icon path={ICONS.install} size={24} />
               <div>
                 <h2 id="install-title">Install the app</h2>
                 <p>One tap from your home screen, with shortcuts. Works offline.</p>
               </div>
               <div class="button-row">
-                <button type="button" class="primary" onClick={() => void promptInstall()}>
+                <button
+                  type="button"
+                  class="primary"
+                  data-testid="install"
+                  onClick={() => void promptInstall()}
+                >
                   Install
                 </button>
                 <button
@@ -460,6 +468,7 @@ export function App({ engine, initialSound, forceOnboarding = false }: Props) {
         pwa={pwa}
         engine={engine}
         update={update}
+        onWithMedia={setWithMedia}
         onReset={resetSettings}
         onApplyUpdate={applyUpdate}
         onOpenOnboarding={() => setShowOnboarding(true)}

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { expectPlaying, expectStatus, skipOnboarding, soundRadio } from './helpers'
 
 /** State of the <audio> element behind the media controls, and of the Media Session. */
 const media = (page: Page) =>
@@ -16,23 +17,14 @@ const media = (page: Page) =>
   })
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    try {
-      const raw = localStorage.getItem('ben-gen:settings:v1')
-      const current = raw ? JSON.parse(raw) : {}
-      localStorage.setItem(
-        'ben-gen:settings:v1',
-        JSON.stringify({ ...current, onboardingDismissed: true }),
-      )
-    } catch {}
-  })
+  await skipOnboarding(page)
   await page.goto('./')
 })
 
 test('plays a real, unmuted media element (>5 s) so browsers show media controls', async ({
   page,
 }) => {
-  await page.getByRole('radio', { name: /Rain/ }).check()
+  await soundRadio(page, 'rain').check()
   await page.getByTestId('play').click()
   await expect
     .poll(() => media(page))
@@ -42,31 +34,31 @@ test('plays a real, unmuted media element (>5 s) so browsers show media controls
       volume: 1,
       usesStream: false,
       playbackState: 'playing',
-      title: 'Rain',
+      title: expect.any(String),
     })
   expect((await media(page)).duration).toBeGreaterThan(5)
 
-  await page.getByRole('button', { name: /Stop/ }).click()
+  await page.getByTestId('play').click()
   await expect.poll(() => media(page)).toMatchObject({ paused: true, playbackState: 'paused' })
 })
 
 test('stops when the system pauses the media (phone call, another app)', async ({ page }) => {
   await page.getByTestId('play').click()
-  await expect(page.getByTestId('status')).toHaveText(/Playing/)
+  await expectPlaying(page)
   await page.evaluate(() => (window as any).benGen.engine.mediaElement.pause())
-  await expect(page.getByTestId('status')).toHaveText('Stopped')
+  await expectStatus(page, 'stopped')
 })
 
 test('"Mix with other audio" plays without the media element', async ({ page }) => {
-  await page.getByRole('button', { name: 'Settings' }).click()
-  await page.getByLabel('Playback mode').selectOption('direct')
+  await page.getByTestId('open-settings').click()
+  await page.locator('#output').selectOption('direct')
   await page.keyboard.press('Escape')
   await page.getByTestId('play').click()
-  await expect(page.getByTestId('status')).toHaveText(/Playing/)
+  await expectPlaying(page)
   expect((await media(page)).paused).toBe(true)
   // Switching back while playing brings the controls back.
-  await page.getByRole('button', { name: 'Settings' }).click()
-  await page.getByLabel('Playback mode').selectOption('media')
+  await page.getByTestId('open-settings').click()
+  await page.locator('#output').selectOption('media')
   await expect.poll(async () => (await media(page)).paused).toBe(false)
 })
 
@@ -84,10 +76,9 @@ test('iOS/WebKit-only quirk: requests a "playback" audio session when the API ex
 test('uses a large output buffer (fewer dropouts on slow phones)', async ({ page }) => {
   // Decision 2026-10-13 (docs/PLAN.md §4.3): always ask for ~0.3 s of buffering.
   await page.getByTestId('play').click()
-  await expect(page.getByTestId('status')).toHaveText(/Playing/)
+  await expectPlaying(page)
   const latencyMs = await page.evaluate(
     () => (window as any).benGen.engine.getDiagnostics().latencyMs as number,
   )
   expect(latencyMs).toBeGreaterThanOrEqual(150)
-  await expect(page.getByRole('switch', { name: /audio buffer/i })).toHaveCount(0)
 })

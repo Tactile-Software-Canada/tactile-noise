@@ -45,6 +45,7 @@ export function Slider({
             type="button"
             class="icon-btn small"
             aria-label={`${label}: down`}
+            data-testid={`${id}-down`}
             disabled={value <= min}
             onClick={() => onInput(clampTo(value - step))}
           >
@@ -67,6 +68,7 @@ export function Slider({
             type="button"
             class="icon-btn small"
             aria-label={`${label}: up`}
+            data-testid={`${id}-up`}
             disabled={value >= max}
             onClick={() => onInput(clampTo(value + step))}
           >
@@ -181,7 +183,13 @@ export function ChipGroup<T extends string | number>({
       <div class="chips">
         {options.map(([v, text]) => (
           <label class="chip" key={String(v)}>
-            <input type="radio" name={name} checked={value === v} onChange={() => onChange(v)} />
+            <input
+              type="radio"
+              name={name}
+              value={String(v)}
+              checked={value === v}
+              onChange={() => onChange(v)}
+            />
             <span>{text}</span>
           </label>
         ))}

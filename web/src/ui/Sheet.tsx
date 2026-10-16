@@ -41,7 +41,13 @@ export function Sheet({ id, title, open, onClose, children }: Props) {
       <div class="sheet-inner">
         <header class="sheet-header">
           <h2 id={`${id}-title`}>{title}</h2>
-          <button type="button" class="icon-btn" aria-label="Close" onClick={onClose}>
+          <button
+            type="button"
+            class="icon-btn"
+            aria-label="Close"
+            data-testid="sheet-close"
+            onClick={onClose}
+          >
             <Icon path={ICONS.close} />
           </button>
         </header>

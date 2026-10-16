@@ -1,5 +1,5 @@
 import type { SoundInfo } from '../sounds'
-import { Slider, Switch } from './controls'
+import { Slider } from './controls'
 import { Icon } from './Icon'
 import { ICONS } from './icons'
 
@@ -9,14 +9,12 @@ interface Props {
   statusText: string
   volume: number
   withMedia: boolean
-  mediaVolume: number
   timerLabel: string
   timerActive: boolean
   canSaveFavorite: boolean
   isFavorite: boolean
   onToggle(): void
   onVolume(v: number): void
-  onWithMedia(on: boolean): void
   onOpenTimer(): void
   onOpenAdjust(): void
   onSaveFavorite(): void
@@ -63,13 +61,6 @@ export function NowPlaying(p: Props) {
           stepButtons
           onInput={p.onVolume}
         />
-        <Switch
-          id="with-media"
-          label="Make quieter while media is playing"
-          hint={`Switch to a quieter volume (${p.mediaVolume}%) while music or video plays.`}
-          checked={p.withMedia}
-          onChange={p.onWithMedia}
-        />
       </div>
 
       <div class="quick-actions">
@@ -78,12 +69,19 @@ export function NowPlaying(p: Props) {
           class={`pill${p.timerActive ? ' active' : ''}`}
           onClick={p.onOpenTimer}
           aria-haspopup="dialog"
+          data-testid="open-timer"
         >
           <Icon path={ICONS.timer} size={20} />
           <span>Sleep timer</span>
           <span class="pill-value">{p.timerLabel}</span>
         </button>
-        <button type="button" class="pill" onClick={p.onOpenAdjust} aria-haspopup="dialog">
+        <button
+          type="button"
+          class="pill"
+          onClick={p.onOpenAdjust}
+          aria-haspopup="dialog"
+          data-testid="open-adjust"
+        >
           <Icon path={ICONS.tune} size={20} />
           <span>Adjust</span>
         </button>
@@ -93,6 +91,7 @@ export function NowPlaying(p: Props) {
           onClick={p.onSaveFavorite}
           disabled={!p.canSaveFavorite && !p.isFavorite}
           aria-pressed={p.isFavorite}
+          data-testid="favorite"
         >
           <Icon path={ICONS.star} size={20} filled={p.isFavorite} />
           <span>Favorite</span>

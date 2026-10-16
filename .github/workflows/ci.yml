@@ -5,9 +5,16 @@ on:
   pull_request:
 
 jobs:
-  web:
-    name: PWA
+  # Formats with Prettier and, on a branch push, commits the result so the jobs below test it.
+  # outputs.sha is empty when nothing was committed, so they check out the triggering commit.
+  # Pushes made with GITHUB_TOKEN don't start another CI run.
+  format:
+    name: Prettier
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
     defaults:
       run:
         working-directory: web
@@ -19,6 +26,37 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
+      - run: npm run format
+      - name: Commit formatting changes
+        id: commit
+        run: |
+          if [ "${{ github.event_name }}" = push ] && [ "${{ github.ref_type }}" = branch ] \
+            && [ -n "$(git status --porcelain)" ]; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -am 'Format with Prettier'
+            git push
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          fi
+
+  web:
+    name: PWA
+    needs: format
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.format.outputs.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      # Fails only for a pull request, whose formatting isn't committed back.
       - run: npm run format:check
       - run: npm run typecheck
       - run: npm test
@@ -30,12 +68,15 @@ jobs:
 
   android:
     name: TWA
+    needs: format
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: android
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.format.outputs.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22

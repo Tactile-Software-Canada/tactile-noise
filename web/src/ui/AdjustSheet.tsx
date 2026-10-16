@@ -51,6 +51,7 @@ export function AdjustSheet({ open, onClose, sound, value, onChange }: Props) {
         type="button"
         class="secondary"
         disabled={isDefault}
+        data-testid="adjust-reset"
         onClick={() => onChange({ intensity: 50, tilt: 0 })}
       >
         Reset to default

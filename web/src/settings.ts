@@ -91,6 +91,8 @@ export function sanitize(raw: unknown): Settings {
     }
   }
 
+  const output = oneOf<OutputMode>(r.output, ['media', 'direct'], d.output)
+
   const favorites: Favorite[] = []
   if (Array.isArray(r.favorites)) {
     for (const f of r.favorites.slice(0, MAX_FAVORITES)) {
@@ -109,13 +111,14 @@ export function sanitize(raw: unknown): Settings {
     sound: isSoundId(r.sound) ? r.sound : d.sound,
     volume: num(r.volume, 0, 100, d.volume),
     mediaVolume: num(r.mediaVolume, 0, 100, d.mediaVolume),
-    withMedia: bool(r.withMedia, d.withMedia),
+    // Only offered in “Mix with other audio” mode (Settings → Playback).
+    withMedia: output === 'direct' && bool(r.withMedia, d.withMedia),
     perSound,
     fadeInSeconds: oneOf(r.fadeInSeconds, FADE_IN_OPTIONS, d.fadeInSeconds),
     timerMinutes: num(r.timerMinutes, 0, 24 * 60, d.timerMinutes),
     timerFadeSeconds: oneOf(r.timerFadeSeconds, TIMER_FADE_OPTIONS, d.timerFadeSeconds),
     mono: bool(r.mono, d.mono),
-    output: oneOf<OutputMode>(r.output, ['media', 'direct'], d.output),
+    output,
     favorites,
     theme: oneOf<Theme>(r.theme, ['system', 'dark', 'light'], d.theme),
     installDismissed: bool(r.installDismissed, d.installDismissed),

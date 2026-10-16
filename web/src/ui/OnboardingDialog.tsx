@@ -106,6 +106,7 @@ export function OnboardingDialog({ open, onClose, onComplete, engine, currentSou
             class="text-btn onboarding-skip-btn"
             onClick={onClose}
             aria-label="Skip onboarding"
+            data-testid="onboarding-skip"
           >
             Skip
           </button>
@@ -119,9 +120,7 @@ export function OnboardingDialog({ open, onClose, onComplete, engine, currentSou
                 <h2 id="onboarding-title" class="onboarding-headline">
                   Live Generated Soundscapes
                 </h2>
-                <p class="onboarding-desc">
-                  Tap to preview the live generator
-                </p>
+                <p class="onboarding-desc">Tap to preview the live generator</p>
 
                 <div class="onboarding-sound-grid" role="group" aria-label="Sample sounds">
                   {PREVIEW_SOUNDS.map((id) => {
@@ -134,6 +133,8 @@ export function OnboardingDialog({ open, onClose, onComplete, engine, currentSou
                         class={`onboarding-sound-card ${isPlaying ? 'is-playing' : ''}`}
                         onClick={() => void togglePreview(id)}
                         aria-pressed={isPlaying}
+                        data-testid="onboarding-sample"
+                        data-sound={id}
                       >
                         <div class="sound-card-icon" style={`--glow-hue: ${info.hue}`}>
                           <Icon path={info.icon} size={28} />
@@ -250,6 +251,7 @@ export function OnboardingDialog({ open, onClose, onComplete, engine, currentSou
               <button
                 type="button"
                 class="primary onboarding-next-btn"
+                data-testid="onboarding-next"
                 onClick={() => setStep((s) => s + 1)}
               >
                 Continue
@@ -258,6 +260,7 @@ export function OnboardingDialog({ open, onClose, onComplete, engine, currentSou
               <button
                 type="button"
                 class="primary onboarding-finish-btn"
+                data-testid="onboarding-finish"
                 onClick={() => handleFinish()}
               >
                 Start

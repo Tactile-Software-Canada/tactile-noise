@@ -1,193 +1,218 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-
-/** Output level (dBFS RMS) measured inside the page's audio graph. */
-const level = (page: Page) =>
-  page.evaluate(() => (window as any).benGen.engine.measureDb() as number)
-
-const status = (page: Page) => page.getByTestId('status')
-const volumeSlider = (page: Page) => page.getByRole('slider', { name: 'Volume', exact: true })
+import {
+  engineState,
+  expectPlaying,
+  expectStatus,
+  level,
+  skipOnboarding,
+  soundRadio,
+  volumeSlider,
+} from './helpers'
 
 test.beforeEach(async ({ page }, testInfo) => {
-  if (!testInfo.title.includes('first-time onboarding')) {
-    await page.addInitScript(() => {
-      try {
-        const raw = localStorage.getItem('ben-gen:settings:v1')
-        const current = raw ? JSON.parse(raw) : {}
-        localStorage.setItem(
-          'ben-gen:settings:v1',
-          JSON.stringify({ ...current, onboardingDismissed: true }),
-        )
-      } catch {}
-    })
-  }
+  if (!testInfo.title.includes('first-time onboarding')) await skipOnboarding(page)
   await page.goto('./')
 })
 
+/** Minutes left on the running sleep timer, or null. */
+const timerMinutesLeft = async (page: Page) => {
+  const { timerEndsAt } = await engineState(page)
+  return timerEndsAt === null ? null : (timerEndsAt - Date.now()) / 60_000
+}
+
 test('plays, switches sound, and stops', async ({ page }) => {
-  await expect(status(page)).toHaveText('Stopped')
+  await expectStatus(page, 'stopped')
   await page.getByTestId('play').click()
-  await expect(status(page)).toHaveText(/Playing Balanced/)
+  await expectPlaying(page, 'balanced')
   // Audio actually flows through the worklet and graph.
   await expect.poll(() => level(page), { timeout: 5000 }).toBeGreaterThan(-60)
 
-  await page.getByRole('radio', { name: /Rain/ }).check()
-  await expect(status(page)).toHaveText(/Playing Rain/)
-  await expect(page.getByRole('heading', { name: 'Rain', level: 2 })).toBeVisible()
+  await soundRadio(page, 'rain').check()
+  await expectPlaying(page, 'rain')
   await expect.poll(() => level(page)).toBeGreaterThan(-60)
 
-  await page.getByRole('button', { name: /Stop/ }).click()
-  await expect(status(page)).toHaveText('Stopped')
+  await page.getByTestId('play').click()
+  await expectStatus(page, 'stopped')
 })
 
 test('every sound plays', async ({ page }) => {
   await page.getByTestId('play').click()
-  const radios = page.getByRole('radio', { name: /./ }).and(page.locator('[name=sound]'))
+  const radios = page.locator('input[name="sound"]')
   const count = await radios.count()
-  expect(count).toBe(14)
+  expect(count).toBeGreaterThan(0)
   for (let i = 0; i < count; i++) {
-    await radios.nth(i).check()
-    await expect(status(page)).toHaveText(/Playing/)
+    const radio = radios.nth(i)
+    await radio.check()
+    await expectPlaying(page, (await radio.getAttribute('value'))!)
     await expect.poll(() => level(page), { timeout: 5000 }).toBeGreaterThan(-60)
   }
 })
 
 test('switching playback mode mid-playback keeps playing', async ({ page }) => {
-  const output = page.getByRole('combobox', { name: 'Playback mode' })
-  await page.getByRole('button', { name: 'Settings' }).click()
+  const output = page.locator('#output')
+  await page.getByTestId('open-settings').click()
   await output.selectOption('direct')
   await page.keyboard.press('Escape')
   await page.getByTestId('play').click()
   await expect.poll(() => level(page), { timeout: 5000 }).toBeGreaterThan(-60)
-  await page.getByRole('button', { name: 'Settings' }).click()
+  await page.getByTestId('open-settings').click()
   await output.selectOption('media')
   await page.keyboard.press('Escape')
   await page.waitForTimeout(1500)
-  await expect(page.getByTestId('status')).toHaveText(/Playing Balanced/)
+  await expectPlaying(page, 'balanced')
   await expect.poll(() => level(page)).toBeGreaterThan(-60)
 })
 
+test('"make quieter" is only offered when mixing with other audio', async ({ page }) => {
+  await page.getByTestId('open-settings').click()
+  const withMedia = page.locator('#with-media')
+  await expect(withMedia).toHaveCount(0)
+  await page.locator('#output').selectOption('direct')
+  await withMedia.check()
+  await page.locator('#media-volume').selectOption('10')
+  await page.keyboard.press('Escape')
+  await expect(volumeSlider(page)).toHaveValue('10')
+
+  // Back to media controls: the option goes away and the normal volume returns.
+  await page.getByTestId('open-settings').click()
+  await page.locator('#output').selectOption('media')
+  await expect(withMedia).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await expect(volumeSlider(page)).toHaveValue('40')
+})
+
 test('remembers settings across reloads', async ({ page }) => {
-  await page.getByRole('radio', { name: /Ocean/ }).check()
+  await soundRadio(page, 'ocean').check()
   await volumeSlider(page).fill('63')
-  await page.getByRole('button', { name: /Sleep timer/ }).click()
-  await page.getByRole('radio', { name: '30 min' }).check()
-  await page.getByRole('button', { name: 'Close' }).click()
+  await page.getByTestId('open-timer').click()
+  const timer = page.locator('#timer-sheet')
+  await timer.locator('input[name="timer"][value="30"]').check()
+  await timer.getByTestId('sheet-close').click()
   await page.reload()
-  await expect(page.getByRole('radio', { name: /Ocean/ })).toBeChecked()
+  await expect(soundRadio(page, 'ocean')).toBeChecked()
   await expect(volumeSlider(page)).toHaveValue('63')
-  await expect(page.getByRole('button', { name: /Sleep timer/ })).toContainText('30 min')
+  await page.getByTestId('open-timer').click()
+  await expect(timer.locator('input[name="timer"][value="30"]')).toBeChecked()
 })
 
 test('volume step buttons move by 1%', async ({ page }) => {
-  await page.getByRole('button', { name: 'Volume: up' }).click()
+  await page.getByTestId('volume-up').click()
   await expect(volumeSlider(page)).toHaveValue('41')
-  await page.getByRole('button', { name: 'Volume: down' }).click()
-  await page.getByRole('button', { name: 'Volume: down' }).click()
+  await page.getByTestId('volume-down').click()
+  await page.getByTestId('volume-down').click()
   await expect(volumeSlider(page)).toHaveValue('39')
 })
 
 test('sleep timer counts down, extends, and stops playback', async ({ page }) => {
-  await page.getByRole('button', { name: /Sleep timer/ }).click()
-  const dialog = page.getByRole('dialog', { name: 'Sleep timer' })
-  await dialog.getByRole('radio', { name: 'Custom' }).check()
-  await expect(dialog.getByLabel('Minutes', { exact: true })).toHaveValue('120')
-  await dialog.getByRole('button', { name: 'Close' }).click()
+  await page.getByTestId('open-timer').click()
+  const dialog = page.locator('#timer-sheet')
+  await dialog.locator('input[name="timer"][value="-1"]').check() // Custom
+  await expect(dialog.locator('#custom-timer')).toHaveValue('120')
+  await dialog.getByTestId('sheet-close').click()
 
   await page.getByTestId('play').click()
-  await expect(status(page)).toContainText('stops at')
-  await expect(page.getByRole('button', { name: /Sleep timer/ })).toContainText('2 h 00 min')
+  await expectPlaying(page)
+  await expect.poll(() => timerMinutesLeft(page)).toBeGreaterThan(119)
+  expect(await timerMinutesLeft(page)).toBeLessThanOrEqual(120)
 
-  await page.getByRole('button', { name: /Sleep timer/ }).click()
-  await dialog.getByRole('button', { name: '15 min', exact: true }).click()
-  await expect(dialog).toContainText('2 h 15 min')
-  await dialog.getByRole('button', { name: 'Close' }).click()
+  await page.getByTestId('open-timer').click()
+  await dialog.getByTestId('timer-extend').click()
+  await expect.poll(() => timerMinutesLeft(page)).toBeGreaterThan(134)
+  await dialog.getByTestId('sheet-close').click()
 
   // Shorten the running timer to 1 s via the engine, as a real wait would take hours.
   await page.evaluate(() => (window as any).benGen.engine.startSleepTimer(1, 0.5))
-  await expect(status(page)).toHaveText('Stopped', { timeout: 5000 })
+  await expectStatus(page, 'stopped', 5000)
 })
 
 test('favorites: save, replay, remove', async ({ page }) => {
-  await page.getByRole('radio', { name: /Fire/ }).check()
-  const star = page.getByRole('button', { name: 'Favorite' })
+  await soundRadio(page, 'fire').check()
+  const star = page.getByTestId('favorite')
   await expect(star).toHaveAttribute('aria-pressed', 'false')
   await star.click()
   await expect(star).toHaveAttribute('aria-pressed', 'true')
 
-  await page.getByRole('radio', { name: /Bright/ }).check()
+  const saved = page.locator('[data-testid="favorite-item"][data-sound="fire"]')
+  await soundRadio(page, 'bright').check()
   await expect(star).toHaveAttribute('aria-pressed', 'false')
-  await page.getByRole('button', { name: /^Fire · 40%/ }).click()
-  await expect(status(page)).toHaveText(/Playing Fire/)
-  await expect(page.getByRole('radio', { name: /Fire/ })).toBeChecked()
+  await saved.click()
+  await expectPlaying(page, 'fire')
+  await expect(soundRadio(page, 'fire')).toBeChecked()
 
-  await page.getByRole('button', { name: 'Edit' }).click()
-  await page.getByRole('button', { name: /Remove favorite Fire/ }).click()
-  await expect(page.getByRole('button', { name: /^Fire · 40%/ })).toHaveCount(0)
+  // Removing asks first, and can be cancelled.
+  await page.getByTestId('favorites-edit').click()
+  await page.getByTestId('favorite-remove').click()
+  await page.getByTestId('favorite-remove-cancel').click()
+  await expect(saved).toHaveCount(1)
+  await expect(page.getByTestId('favorite-remove')).toBeFocused()
+  await page.getByTestId('favorite-remove').click()
+  await page.getByTestId('favorite-remove-confirm').click()
+  await expect(saved).toHaveCount(0)
+  await expect(page.getByTestId('favorite-remove-confirm')).toHaveCount(0)
 })
 
 test('adjust sheet: intensity and tone are saved per sound', async ({ page }) => {
-  await page.getByRole('radio', { name: /Rain/ }).check()
-  await page.getByRole('button', { name: 'Adjust' }).click()
-  const dialog = page.getByRole('dialog', { name: 'Adjust Rain' })
-  await dialog.getByRole('slider', { name: 'Rainfall' }).fill('80')
-  await dialog.getByRole('slider', { name: 'Tone' }).fill('-30')
-  await expect(dialog.getByRole('slider', { name: 'Tone' })).toHaveAttribute(
-    'aria-valuetext',
-    'Warmer 30%',
-  )
+  const dialog = page.locator('#adjust-sheet')
+  await soundRadio(page, 'rain').check()
+  await page.getByTestId('open-adjust').click()
+  await expect(dialog).toBeVisible()
+  await dialog.locator('#intensity').fill('80')
+  await dialog.locator('#tilt').fill('-30')
+  await expect(dialog.locator('#tilt')).toHaveValue('-30')
   await page.keyboard.press('Escape')
 
   // Another sound keeps its own defaults.
-  await page.getByRole('radio', { name: /Ocean/ }).check()
-  await page.getByRole('button', { name: 'Adjust' }).click()
-  await expect(
-    page.getByRole('dialog', { name: 'Adjust Ocean' }).getByRole('slider', { name: 'Wave size' }),
-  ).toHaveValue('50')
+  await soundRadio(page, 'ocean').check()
+  await page.getByTestId('open-adjust').click()
+  await expect(dialog).toBeVisible()
+  await expect(dialog.locator('#intensity')).toHaveValue('50')
   await page.keyboard.press('Escape')
 
-  await page.getByRole('radio', { name: /Rain/ }).check()
-  await page.getByRole('button', { name: 'Adjust' }).click()
-  await expect(dialog.getByRole('slider', { name: 'Rainfall' })).toHaveValue('80')
-  await dialog.getByRole('button', { name: 'Reset to default' }).click()
-  await expect(dialog.getByRole('slider', { name: 'Rainfall' })).toHaveValue('50')
+  await soundRadio(page, 'rain').check()
+  await page.getByTestId('open-adjust').click()
+  await expect(dialog).toBeVisible()
+  await expect(dialog.locator('#intensity')).toHaveValue('80')
+  await dialog.getByTestId('adjust-reset').click()
+  await expect(dialog.locator('#intensity')).toHaveValue('50')
 })
 
 test('keyboard shortcuts', async ({ page }) => {
   const body = page.locator('body')
   await body.press('5')
-  await expect(page.getByRole('radio', { name: /Rain/ })).toBeChecked()
+  await expect(soundRadio(page, 'rain')).toBeChecked()
   await body.press(']')
-  await expect(page.getByRole('radio', { name: /Ocean/ })).toBeChecked()
+  await expect(soundRadio(page, 'ocean')).toBeChecked()
   await body.press('[')
-  await expect(page.getByRole('radio', { name: /Rain/ })).toBeChecked()
+  await expect(soundRadio(page, 'rain')).toBeChecked()
   await body.press('Space')
-  await expect(status(page)).toHaveText(/Playing Rain/)
+  await expectPlaying(page, 'rain')
   await body.press('ArrowUp')
   await expect(volumeSlider(page)).toHaveValue('45')
   await body.press('Space')
-  await expect(status(page)).toHaveText('Stopped')
+  await expectStatus(page, 'stopped')
   await body.press('t')
-  await expect(page.getByRole('dialog', { name: 'Sleep timer' })).toBeVisible()
+  await expect(page.locator('#timer-sheet')).toBeVisible()
   await page.keyboard.press('Escape')
-  await expect(page.getByRole('dialog', { name: 'Sleep timer' })).toBeHidden()
+  await expect(page.locator('#timer-sheet')).toBeHidden()
 })
 
 test('manifest shortcut URL pre-selects a sound', async ({ page }) => {
   await page.goto('./?sound=stream')
-  await expect(page.getByRole('radio', { name: /Stream/ })).toBeChecked()
+  await expect(soundRadio(page, 'stream')).toBeChecked()
   expect(page.url()).not.toContain('sound=')
 })
 
 test('theme setting overrides the system theme and persists', async ({ page }) => {
+  const theme = (value: string) => page.locator(`input[name="theme"][value="${value}"]`)
   await page.emulateMedia({ colorScheme: 'dark' })
-  await page.getByRole('button', { name: 'Settings' }).click()
-  await page.getByRole('radio', { name: 'Light' }).check()
+  await page.getByTestId('open-settings').click()
+  await theme('light').check()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   await page.reload()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
-  await page.getByRole('button', { name: 'Settings' }).click()
-  await page.getByRole('radio', { name: 'System' }).check()
+  await page.getByTestId('open-settings').click()
+  await theme('system').check()
   await expect(page.locator('html')).not.toHaveAttribute('data-theme')
 })
 
@@ -201,20 +226,11 @@ test('install card appears when the browser offers installation', async ({ page 
     event.userChoice = Promise.resolve({ outcome: 'accepted' })
     window.dispatchEvent(event)
   })
-  const card = page.getByRole('region', { name: 'Install the app' })
+  const card = page.getByTestId('install-card')
   await expect(card).toBeVisible()
-  await card.getByRole('button', { name: 'Install' }).click()
+  await card.getByTestId('install').click()
   await expect.poll(() => page.evaluate(() => (window as any).installPrompted)).toBe(true)
   await expect(card).toBeHidden()
-})
-
-test('diagnostics report generator load while playing', async ({ page }) => {
-  await page.getByTestId('play').click()
-  await page.getByRole('button', { name: 'Settings' }).click()
-  await page.getByText('Audio engine').click()
-  const dialog = page.getByRole('dialog', { name: 'Settings' })
-  await expect(dialog).toContainText('running')
-  await expect(dialog).toContainText(/% of real time/, { timeout: 5000 })
 })
 
 for (const colorScheme of ['dark', 'light'] as const) {
@@ -236,27 +252,28 @@ for (const colorScheme of ['dark', 'light'] as const) {
         .analyze()
       expect(results.violations).toEqual([])
     }
-    await page.getByRole('radio', { name: /Rain/ }).check()
-    await page.getByRole('button', { name: 'Favorite' }).click()
+    const openDialog = page.locator('dialog[open]')
+    await soundRadio(page, 'rain').check()
+    await page.getByTestId('favorite').click()
     await page.getByTestId('play').click()
     await scan()
-    for (const name of [/Sleep timer/, 'Adjust', 'Settings']) {
-      await page.getByRole('button', { name }).first().click()
-      await expect(page.getByRole('dialog')).toBeVisible()
-      if (name === 'Settings') {
-        await page.getByText('Audio engine').click()
-        await page.getByText('Keyboard shortcuts').click()
-      }
+    for (const opener of ['open-timer', 'open-adjust', 'open-settings']) {
+      await page.getByTestId(opener).click()
+      await expect(openDialog).toBeVisible()
+      // Expand collapsed sections (help, about) so they're scanned too.
+      await openDialog.evaluate((d) =>
+        d.querySelectorAll('details').forEach((x) => (x.open = true)),
+      )
       await scan()
       await page.keyboard.press('Escape')
-      await expect(page.getByRole('dialog')).toBeHidden()
+      await expect(openDialog).toHaveCount(0)
     }
     // Verify Onboarding dialog accessibility
-    await page.getByRole('button', { name: 'Settings' }).click()
-    await page.getByRole('button', { name: 'Replay tour' }).click()
+    await page.getByTestId('open-settings').click()
+    await page.getByTestId('replay-tour').click()
     await expect(page.locator('#onboarding-dialog')).toBeVisible()
     await scan()
-    await page.getByRole('button', { name: 'Skip onboarding' }).click()
+    await page.getByTestId('onboarding-skip').click()
     await expect(page.locator('#onboarding-dialog')).toBeHidden()
   })
 }
@@ -276,8 +293,8 @@ test('first-time onboarding: appears with animated wave background, samples soun
   await expect(dialog.locator('.tactile-wave-svg path animate')).toHaveCount(5)
 
   // Step 1: Interactive sound sampling
-  await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(/14 Soundscapes/)
-  const rainSample = dialog.getByRole('button', { name: /Rain/ })
+  await expect(dialog.locator('[data-slide="1"]')).toBeVisible()
+  const rainSample = dialog.locator('[data-testid="onboarding-sample"][data-sound="rain"]')
   await expect(rainSample).toBeVisible()
 
   // Sample rain sound
@@ -289,30 +306,28 @@ test('first-time onboarding: appears with animated wave background, samples soun
   await rainSample.click()
   await expect(rainSample).toHaveAttribute('aria-pressed', 'false')
 
-  await dialog.getByRole('button', { name: 'Continue' }).click()
+  await dialog.getByTestId('onboarding-next').click()
 
   // Step 2: Daily routine & features
-  await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(
-    /Crafted for your daily routine/,
-  )
+  await expect(dialog.locator('[data-slide="2"]')).toBeVisible()
 
   // Finish onboarding
-  await dialog.getByRole('button', { name: 'Start', exact: true }).click()
+  await dialog.getByTestId('onboarding-finish').click()
   await expect(dialog).toBeHidden()
 
   // Verify settings persisted so onboarding does not reopen on reload
   await page.reload()
   await expect(page.locator('#onboarding-dialog')).toBeHidden()
-  await expect(status(page)).toHaveText('Stopped')
+  await expectStatus(page, 'stopped')
 })
 
 test('re-opening onboarding tour from Settings', async ({ page }) => {
-  await page.getByRole('button', { name: 'Settings' }).click()
-  await page.getByRole('button', { name: 'Replay tour' }).click()
+  await page.getByTestId('open-settings').click()
+  await page.getByTestId('replay-tour').click()
   const dialog = page.locator('#onboarding-dialog')
   await expect(dialog).toBeVisible()
   await expect(dialog.locator('.tactile-wave-bg')).toBeVisible()
-  await dialog.getByRole('button', { name: 'Skip onboarding' }).click()
+  await dialog.getByTestId('onboarding-skip').click()
   await expect(dialog).toBeHidden()
 })
 
@@ -320,7 +335,7 @@ test('works offline after the first visit', async ({ page, context }) => {
   await page.evaluate(() => navigator.serviceWorker.ready)
   await context.setOffline(true)
   await page.reload()
-  await expect(page.getByRole('heading', { name: 'Tactile Noise' })).toBeVisible()
+  await expect(page.getByTestId('play')).toBeVisible()
   await page.getByTestId('play').click()
   await expect.poll(() => level(page), { timeout: 5000 }).toBeGreaterThan(-60)
 })

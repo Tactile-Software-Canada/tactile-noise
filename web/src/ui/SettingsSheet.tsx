@@ -15,6 +15,7 @@ interface Props {
   pwa: PwaState
   engine: AudioEngine
   update(patch: Partial<Settings>): void
+  onWithMedia(on: boolean): void
   onReset(): void
   onApplyUpdate(): void
   onOpenOnboarding(): void
@@ -52,8 +53,31 @@ export function SettingsSheet(p: Props) {
           onChange={(v) => {
             p.update({ output: v })
             p.engine.setOutput(v)
+            // The quieter volume is only offered when mixing; drop back to the normal one.
+            if (v === 'media' && s.withMedia) p.onWithMedia(false)
           }}
         />
+        {s.output === 'direct' && (
+          <>
+            <Switch
+              id="with-media"
+              label="Make quieter while media is playing"
+              hint={`Switch to a quieter volume (${s.mediaVolume}%) while music or video plays.`}
+              checked={s.withMedia}
+              onChange={p.onWithMedia}
+            />
+            <Select
+              id="media-volume"
+              label="“Media is playing” volume"
+              value={s.mediaVolume}
+              options={[5, 10, 15, 20, 25, 30, 40, 50].map((v) => [v, `${v}%`])}
+              onChange={(v) => {
+                p.update({ mediaVolume: v })
+                if (s.withMedia) p.engine.setVolume(v)
+              }}
+            />
+          </>
+        )}
         <Switch
           id="mono"
           label="Mono audio"
@@ -62,16 +86,6 @@ export function SettingsSheet(p: Props) {
           onChange={(on) => {
             p.update({ mono: on })
             p.engine.setMono(on)
-          }}
-        />
-        <Select
-          id="media-volume"
-          label="“Media is playing” volume"
-          value={s.mediaVolume}
-          options={[5, 10, 15, 20, 25, 30, 40, 50].map((v) => [v, `${v}%`])}
-          onChange={(v) => {
-            p.update({ mediaVolume: v })
-            if (s.withMedia) p.engine.setVolume(v)
           }}
         />
       </section>
@@ -155,7 +169,8 @@ export function SettingsSheet(p: Props) {
         </div>
       </section>
 
-      <DiagnosticsSection engine={p.engine} open={p.open} />
+      {/* Development builds only; stripped from production. */}
+      {import.meta.env.DEV && <DiagnosticsSection engine={p.engine} open={p.open} />}
 
       <section class="settings-section" aria-labelledby="set-help">
         <h3 id="set-help">Help</h3>
@@ -167,6 +182,7 @@ export function SettingsSheet(p: Props) {
           <button
             type="button"
             class="secondary"
+            data-testid="replay-tour"
             onClick={() => {
               p.onClose()
               p.onOpenOnboarding()
@@ -192,6 +208,13 @@ export function SettingsSheet(p: Props) {
         </details>
         <details class="help">
           <summary>About</summary>
+          <p>
+            Made by{' '}
+            <a href="https://tactile.software" target="_blank" rel="noopener">
+              Tactile Software
+            </a>
+            : software you can feel the quality of.
+          </p>
           <p>
             Every sound ({SOUNDS.length} of them) is generated live on your device, so it never
             loops or repeats, and nothing is downloaded or sent anywhere.

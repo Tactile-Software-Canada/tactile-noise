@@ -114,7 +114,12 @@ export function TimerSheet(p: Props) {
           </p>
           <p class="hint">Stops at {formatClock(p.endsAt)}</p>
           <div class="button-row">
-            <button type="button" class="secondary" onClick={() => p.onExtend(15)}>
+            <button
+              type="button"
+              class="secondary"
+              data-testid="timer-extend"
+              onClick={() => p.onExtend(15)}
+            >
               <Icon path={ICONS.plus} size={18} />
               15 min
             </button>
