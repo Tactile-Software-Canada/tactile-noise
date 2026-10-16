@@ -233,6 +233,86 @@ test('install card appears when the browser offers installation', async ({ page 
   await expect(card).toBeHidden()
 })
 
+test('Apple install card appears on iOS with Share instructions and dismisses', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    userAgent:
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+  })
+  const page = await context.newPage()
+  await skipOnboarding(page)
+  await page.goto('./')
+
+  const card = page.getByTestId('apple-install-card')
+  await expect(card).toBeVisible()
+  await expect(card).toContainText('Share')
+  await expect(card).toContainText('Add to Home Screen')
+
+  const dismissBtn = card.getByTestId('apple-install-dismiss')
+  await expect(dismissBtn).toHaveText('Dismiss')
+  await dismissBtn.click()
+  await expect(card).toBeHidden()
+
+  // Setting persists across reload
+  await page.reload()
+  await expect(card).toBeHidden()
+
+  // In settings, the hint guides iOS users
+  await page.getByTestId('open-settings').click()
+  await expect(page.locator('#settings-sheet')).toContainText(
+    'Tap Share in Safari, then choose “Add to Home Screen”.',
+  )
+
+  await context.close()
+})
+
+test('Apple install card appears on macOS Safari with Add to Dock instructions', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    userAgent:
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+  })
+  const page = await context.newPage()
+  await skipOnboarding(page)
+  await page.goto('./')
+
+  const card = page.getByTestId('apple-install-card')
+  await expect(card).toBeVisible()
+  await expect(card).toContainText('Add to Dock')
+
+  // In settings, the hint guides macOS Safari users
+  await page.getByTestId('open-settings').click()
+  await expect(page.locator('#settings-sheet')).toContainText(
+    'In Safari, choose File → Add to Dock…',
+  )
+  await page.keyboard.press('Escape')
+
+  await card.getByTestId('apple-install-dismiss').click()
+  await expect(card).toBeHidden()
+
+  await context.close()
+})
+
+test('Apple install card has no accessibility violations', async ({ browser }) => {
+  const context = await browser.newContext({
+    userAgent:
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+  })
+  const page = await context.newPage()
+  await skipOnboarding(page)
+  await page.goto('./')
+
+  await expect(page.getByTestId('apple-install-card')).toBeVisible()
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+    .analyze()
+  expect(results.violations).toEqual([])
+
+  await context.close()
+})
+
 for (const colorScheme of ['dark', 'light'] as const) {
   test(`has no accessibility violations (${colorScheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme })

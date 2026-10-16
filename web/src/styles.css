@@ -778,6 +778,17 @@ p {
   font-size: 0.9375rem;
 }
 
+.install-card p strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.install-card .inline-icon {
+  display: inline-flex;
+  vertical-align: -2px;
+  margin: 0 1px;
+}
+
 .install-card .button-row {
   grid-column: 2;
   margin-top: 8px;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
 import type { AudioEngine, Diagnostics } from '../audio/engine'
-import { checkForUpdates, promptInstall, type PwaState } from '../pwa'
+import { checkForUpdates, isIos, isMacSafari, promptInstall, type PwaState } from '../pwa'
 import { FADE_IN_OPTIONS, type Settings, type Theme } from '../settings'
 import { SOUNDS } from '../sounds'
 import { ChipGroup, Select, Switch } from './controls'
@@ -247,7 +247,11 @@ function InstallRow({ pwa }: { pwa: PwaState }) {
         <p class="hint">
           {pwa.canInstall
             ? 'Adds it to your home screen with shortcuts, and opens without the browser.'
-            : 'In your browser menu, choose “Add to home screen” or “Install”.'}
+            : isIos()
+              ? 'Tap Share in Safari, then choose “Add to Home Screen”.'
+              : isMacSafari()
+                ? 'In Safari, choose File → Add to Dock…'
+                : 'In your browser menu, choose “Add to home screen” or “Install”.'}
         </p>
       </div>
       {pwa.canInstall && (
