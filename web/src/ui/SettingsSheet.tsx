@@ -263,9 +263,6 @@ function DiagnosticsSection({ engine, open }: { engine: AudioEngine; open: boole
         onToggle={(e) => setExpanded((e.currentTarget as HTMLDetailsElement).open)}
       >
         <summary>Audio engine</summary>
-        <p class="hint">
-          If you hear gaps or crackles, play the sound with this open and check the numbers.
-        </p>
         <dl class="diag" aria-live="off">
           <dt>Engine</dt>
           <dd>{d.contextState}</dd>

@@ -65,7 +65,7 @@ export function NowPlaying(p: Props) {
         />
         <Switch
           id="with-media"
-          label="Media is playing"
+          label="Make quieter while media is playing"
           hint={`Switch to a quieter volume (${p.mediaVolume}%) while music or video plays.`}
           checked={p.withMedia}
           onChange={p.onWithMedia}
