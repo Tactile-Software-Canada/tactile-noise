@@ -3,7 +3,15 @@ import type { AudioEngine, EngineState } from '../audio/engine'
 import { formatClock, formatRemaining } from '../audio/levels'
 import { setupMediaSession, updateMediaSession } from '../audio/mediaSession'
 import type { SoundId } from '../audio/soundIds'
-import { applyUpdate, getPwaState, promptInstall, subscribePwa, type PwaState } from '../pwa'
+import {
+  applyUpdate,
+  getPwaState,
+  isAppleDevice,
+  isIos,
+  promptInstall,
+  subscribePwa,
+  type PwaState,
+} from '../pwa'
 import {
   MAX_FAVORITES,
   clearSettings,
@@ -357,6 +365,8 @@ export function App({ engine, initialSound, forceOnboarding = false }: Props) {
         ? `${settings.timerMinutes} min`
         : 'Off'
   const showInstallCard = pwa.canInstall && !pwa.installed && !settings.installDismissed
+  const showAppleInstallCard =
+    !pwa.canInstall && !pwa.installed && !settings.installDismissed && isAppleDevice()
 
   return (
     <div class="app" data-status={engineState.status}>
@@ -429,6 +439,43 @@ export function App({ engine, initialSound, forceOnboarding = false }: Props) {
                   onClick={() => update({ installDismissed: true })}
                 >
                   Not now
+                </button>
+              </div>
+            </section>
+          )}
+          {showAppleInstallCard && (
+            <section
+              class="install-card"
+              aria-labelledby="apple-install-title"
+              data-testid="apple-install-card"
+            >
+              <Icon path={isIos() ? ICONS.share : ICONS.install} size={24} />
+              <div>
+                <h2 id="apple-install-title">Install the app</h2>
+                <p>
+                  {isIos() ? (
+                    <>
+                      Tap <strong>Share</strong>{' '}
+                      <span class="inline-icon">
+                        <Icon path={ICONS.share} size={16} />
+                      </span>
+                      , then select <strong>Add to Home Screen</strong>.
+                    </>
+                  ) : (
+                    <>
+                      In Safari, choose <strong>File &gt; Add to Dock…</strong> to install.
+                    </>
+                  )}
+                </p>
+              </div>
+              <div class="button-row">
+                <button
+                  type="button"
+                  class="secondary"
+                  data-testid="apple-install-dismiss"
+                  onClick={() => update({ installDismissed: true })}
+                >
+                  Dismiss
                 </button>
               </div>
             </section>

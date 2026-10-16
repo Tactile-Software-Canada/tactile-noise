@@ -56,6 +56,8 @@ export function isStandalone(): boolean {
   )
 }
 
+export { isAppleDevice, isIos, isMac, isMacSafari } from './device'
+
 /** Call once at startup, before rendering (the install event can fire early). */
 export function initPwa(): void {
   window.addEventListener('beforeinstallprompt', (event) => {

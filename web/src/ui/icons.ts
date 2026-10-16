@@ -18,4 +18,5 @@ export const ICONS = {
   refresh: 'M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4v4.5H15',
   edit: 'M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',
   check: 'M5 12.5l4.5 4.5L19 7.5',
+  share: 'M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7M12 14V2.5M7.5 7 12 2.5 16.5 7',
 } as const
