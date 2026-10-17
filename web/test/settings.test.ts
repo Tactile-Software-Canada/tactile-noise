@@ -56,8 +56,43 @@ describe('sanitize', () => {
 
   it('gives every sound, including new ones, default per-sound settings', () => {
     const s = sanitize({ perSound: { rain: { intensity: 70, tilt: 0 } } })
-    expect(s.perSound.train).toEqual({ intensity: 50, tilt: 0 })
+    expect(s.perSound.fan).toEqual({ intensity: 50, tilt: 0 })
     expect(s.perSound.rain.intensity).toBe(70)
+  })
+
+  it('gives sounds with extra controls their defaults, and keeps valid saved values', () => {
+    const d = defaultSettings()
+    expect(d.perSound.train.extras).toEqual({ bumpRandomness: 0, bumpVolume: 50 })
+    expect(d.perSound.airplane.extras).toEqual({ engineVolume: 50 })
+    const s = sanitize({
+      perSound: {
+        // Settings saved before the extras existed.
+        airplane: { intensity: 60, tilt: 0 },
+        train: {
+          intensity: 50,
+          tilt: 0,
+          extras: { bumpRandomness: 250, bumpVolume: 'loud', other: 5 },
+        },
+      },
+    })
+    expect(s.perSound.airplane).toEqual({ intensity: 60, tilt: 0, extras: { engineVolume: 50 } })
+    expect(s.perSound.train.extras).toEqual({ bumpRandomness: 100, bumpVolume: 50 })
+  })
+
+  it('keeps the extras of a favorite', () => {
+    const fav = {
+      id: 'a',
+      sound: 'train',
+      volume: 20,
+      intensity: 40,
+      tilt: 10,
+      extras: { bumpVolume: 80 },
+    }
+    const old = { id: 'b', sound: 'train', volume: 20, intensity: 40, tilt: 10 }
+    const s = sanitize({ favorites: [fav, old, { ...fav, id: 'c', sound: 'rain' }] })
+    expect(s.favorites[0]!.extras).toEqual({ bumpRandomness: 0, bumpVolume: 80 })
+    expect(s.favorites[1]!.extras).toEqual({ bumpRandomness: 0, bumpVolume: 50 })
+    expect(s.favorites[2]!.extras).toBeUndefined()
   })
 
   it('drops the removed audio-buffer setting from old saved settings', () => {

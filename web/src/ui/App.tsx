@@ -124,6 +124,7 @@ export function App({ engine, initialSound, forceOnboarding = false }: Props) {
         intensity: p.intensity / 100,
         volume: s.withMedia ? s.mediaVolume : s.volume,
         tilt: p.tilt,
+        extras: p.extras,
         mono: s.mono,
         fadeInSeconds: s.fadeInSeconds,
         output: s.output,
@@ -144,7 +145,7 @@ export function App({ engine, initialSound, forceOnboarding = false }: Props) {
     (id: SoundId) => {
       update({ sound: id })
       const p = settingsRef.current.perSound[id]
-      engine.setSound(id, p.intensity / 100)
+      engine.setSound(id, p.intensity / 100, p.extras)
       engine.setTilt(p.tilt)
     },
     [engine, update],
@@ -180,6 +181,7 @@ export function App({ engine, initialSound, forceOnboarding = false }: Props) {
     update({ perSound: { ...settings.perSound, [settings.sound]: { ...per, ...patch } } })
     if (patch.intensity !== undefined) engine.setIntensity(patch.intensity / 100)
     if (patch.tilt !== undefined) engine.setTilt(patch.tilt)
+    for (const [id, v] of Object.entries(patch.extras ?? {})) engine.setExtra(id, v)
   }
 
   // ---- sleep timer --------------------------------------------------------
@@ -206,13 +208,16 @@ export function App({ engine, initialSound, forceOnboarding = false }: Props) {
   // ---- favorites ----------------------------------------------------------
 
   const current: Omit<Favorite, 'id'> = { sound: settings.sound, volume, ...per }
+  const sameExtras = (a: Favorite['extras'], b: Favorite['extras']) =>
+    (sound.extras ?? []).every((e) => (a?.[e.id] ?? e.default) === (b?.[e.id] ?? e.default))
   const currentFavorite =
     settings.favorites.find(
       (f) =>
         f.sound === current.sound &&
         f.volume === current.volume &&
         f.intensity === current.intensity &&
-        f.tilt === current.tilt,
+        f.tilt === current.tilt &&
+        sameExtras(f.extras, current.extras),
     ) ?? null
 
   const toggleFavorite = () => {
@@ -237,12 +242,13 @@ export function App({ engine, initialSound, forceOnboarding = false }: Props) {
         volume: f.volume,
         perSound: {
           ...settingsRef.current.perSound,
-          [f.sound]: { intensity: f.intensity, tilt: f.tilt },
+          [f.sound]: { intensity: f.intensity, tilt: f.tilt, extras: f.extras },
         },
       })
       if (playingRef.current) {
-        engine.setSound(f.sound, f.intensity / 100)
+        engine.setSound(f.sound, f.intensity / 100, f.extras)
         engine.setIntensity(f.intensity / 100)
+        for (const [id, v] of Object.entries(f.extras ?? {})) engine.setExtra(id, v)
         engine.setTilt(f.tilt)
         engine.setVolume(f.volume)
       } else {

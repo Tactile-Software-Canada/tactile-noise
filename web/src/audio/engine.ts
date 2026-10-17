@@ -56,6 +56,8 @@ export interface PlayOptions {
   volume: number
   /** −100 … 100 slider value. */
   tilt: number
+  /** Values (0–100) of the sound's extra controls, by id. */
+  extras?: Record<string, number>
   mono: boolean
   fadeInSeconds: number
   output: OutputMode
@@ -184,9 +186,10 @@ export class AudioEngine {
     this.setTilt(opts.tilt)
     this.setMono(opts.mono)
     if (!this.voice || this.voice.sound !== opts.sound) {
-      this.replaceVoice(opts.sound, opts.intensity, false)
+      this.replaceVoice(opts.sound, opts.intensity, opts.extras, false)
     } else {
       this.setIntensity(opts.intensity)
+      for (const [id, value] of Object.entries(opts.extras ?? {})) this.setExtra(id, value)
     }
     // Fade in from wherever we are (silence, or part-way through a stop).
     const fade = g.fade.gain
@@ -222,15 +225,21 @@ export class AudioEngine {
   }
 
   /** Switches sound, cross-fading when already playing. */
-  setSound(sound: SoundId, intensity: number): void {
+  setSound(sound: SoundId, intensity: number, extras?: Record<string, number>): void {
     if (!this.graph || this.state.status !== 'playing') return
     if (this.voice?.sound === sound) return
-    this.replaceVoice(sound, intensity, true)
+    this.replaceVoice(sound, intensity, extras, true)
     this.update({ sound })
   }
 
   setIntensity(value: number): void {
     const msg: ProcessorMessage = { type: 'intensity', value }
+    this.voice?.node.port.postMessage(msg)
+  }
+
+  /** One of the sound's extra controls (0–100 slider value; see `extras` in sounds.ts). */
+  setExtra(id: string, percent: number): void {
+    const msg: ProcessorMessage = { type: 'param', id, value: percent / 100 }
     this.voice?.node.port.postMessage(msg)
   }
 
@@ -380,11 +389,19 @@ export class AudioEngine {
     return g
   }
 
-  private replaceVoice(sound: SoundId, intensity: number, crossfade: boolean): void {
+  private replaceVoice(
+    sound: SoundId,
+    intensity: number,
+    extras: Record<string, number> | undefined,
+    crossfade: boolean,
+  ): void {
     const g = this.graph!
+    const params: Record<string, number> = {}
+    for (const [id, percent] of Object.entries(extras ?? {})) params[id] = percent / 100
     const options: ProcessorOptions = {
       sound,
       intensity,
+      params,
       seed: crypto.getRandomValues(new Uint32Array(1))[0]!,
       tone: this.tone,
       stats: this.diagnostics,

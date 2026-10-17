@@ -1,13 +1,15 @@
 import { isSoundId, type SoundId } from './audio/soundIds'
 import type { OutputMode } from './audio/engine'
 import { clamp } from './audio/levels'
-import { SOUNDS } from './sounds'
+import { SOUNDS, extraDefaults, soundInfo } from './sounds'
 
 export interface SoundSettings {
   /** 0–100 */
   intensity: number
   /** −100 (warm/dark) … 100 (bright) */
   tilt: number
+  /** 0–100 values of the sound's extra controls, for sounds that have them. */
+  extras?: Record<string, number>
 }
 
 export interface Favorite {
@@ -16,6 +18,7 @@ export interface Favorite {
   volume: number
   intensity: number
   tilt: number
+  extras?: Record<string, number>
 }
 
 export type Theme = 'system' | 'dark' | 'light'
@@ -51,7 +54,7 @@ const KEY = 'ben-gen:settings:v1'
 
 export function defaultSettings(): Settings {
   const perSound = {} as Record<SoundId, SoundSettings>
-  for (const s of SOUNDS) perSound[s.id] = { intensity: 50, tilt: 0 }
+  for (const s of SOUNDS) perSound[s.id] = { intensity: 50, tilt: 0, ...withExtras(s.id) }
   return {
     sound: 'balanced',
     volume: 40,
@@ -67,6 +70,27 @@ export function defaultSettings(): Settings {
     theme: 'system',
     installDismissed: false,
     onboardingDismissed: false,
+  }
+}
+
+/**
+ * `{ extras }` for sounds that have extra controls (each value taken from `raw`
+ * when valid, else the default), and nothing for the rest.
+ */
+function withExtras(
+  sound: SoundId,
+  raw?: unknown,
+  num?: (v: unknown, lo: number, hi: number, fallback: number) => number,
+): Pick<SoundSettings, 'extras'> {
+  const info = soundInfo(sound)
+  const defaults = extraDefaults(info)
+  if (!defaults) return {}
+  if (!num || !raw || typeof raw !== 'object') return { extras: defaults }
+  const given = raw as Record<string, unknown>
+  return {
+    extras: Object.fromEntries(
+      Object.entries(defaults).map(([id, d]) => [id, num(given[id], 0, 100, d)]),
+    ),
   }
 }
 
@@ -88,6 +112,7 @@ export function sanitize(raw: unknown): Settings {
     perSound[s.id] = {
       intensity: num(p?.intensity, 0, 100, 50),
       tilt: num(p?.tilt, -100, 100, 0),
+      ...withExtras(s.id, p?.extras, num),
     }
   }
 
@@ -103,6 +128,7 @@ export function sanitize(raw: unknown): Settings {
         volume: num(f.volume, 0, 100, d.volume),
         intensity: num(f.intensity, 0, 100, 50),
         tilt: num(f.tilt, -100, 100, 0),
+        ...withExtras(f.sound, f.extras, num),
       })
     }
   }

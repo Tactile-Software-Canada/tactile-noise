@@ -8,6 +8,16 @@ export const CATEGORIES: { id: Category; name: string }[] = [
   { id: 'machines', name: 'Machines & travel' },
 ]
 
+/** A slider that only some sounds have, beyond intensity and tone. */
+export interface ExtraControl {
+  /** The generator's parameter id (see `setParam` in the DSP); also the slider's element id. */
+  id: string
+  label: string
+  hint: string | undefined
+  /** 0–100; what the sound's recipe does on its own. */
+  default: number
+}
+
 export interface SoundInfo {
   id: SoundId
   name: string
@@ -15,6 +25,8 @@ export interface SoundInfo {
   category: Category
   /** Label for the intensity slider, or null if the sound has no intensity. */
   intensityLabel: string | null
+  /** Further sliders for this sound, shown after intensity in the Adjust sheet. */
+  extras?: ExtraControl[]
   /** SVG path data for a 24×24 stroked icon. */
   icon: string
   /** Decorative hue (0–360) for the now-playing glow. Never carries meaning. */
@@ -135,7 +147,15 @@ export const SOUNDS: SoundInfo[] = [
     name: 'Airplane',
     description: 'Cruising in the cabin',
     category: 'machines',
-    intensityLabel: 'Engine roar',
+    intensityLabel: 'Cabin roar',
+    extras: [
+      {
+        id: 'engineVolume',
+        label: 'Engine volume',
+        hint: undefined,
+        default: 50,
+      },
+    ],
     icon: 'M12 2.5c1 0 1.5 1 1.5 2.5v4.5l8 4.5v2l-8-2.5v4.5l2.5 2v1.5L12 20l-4 1v-1.5l2.5-2V13l-8 2.5v-2l8-4.5V5c0-1.5.5-2.5 1.5-2.5z',
     hue: 215,
   },
@@ -145,6 +165,20 @@ export const SOUNDS: SoundInfo[] = [
     description: 'Riding the rails',
     category: 'machines',
     intensityLabel: 'Speed',
+    extras: [
+      {
+        id: 'bumpRandomness',
+        label: 'Bump randomness',
+        hint: 'Left, the bumps keep a steady rhythm. Right, they come unevenly.',
+        default: 0,
+      },
+      {
+        id: 'bumpVolume',
+        label: 'Bump volume',
+        hint: undefined,
+        default: 50,
+      },
+    ],
     icon: 'M8 3h8a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3zM5 11h14M9 14.5h.01M15 14.5h.01M9 18l-2 3M15 18l2 3',
     hue: 265,
   },
@@ -158,4 +192,10 @@ export function soundInfo(id: SoundId): SoundInfo {
 export function adjacentSound(id: SoundId, step: 1 | -1): SoundId {
   const i = SOUNDS.findIndex((s) => s.id === id)
   return SOUNDS[(i + step + SOUNDS.length) % SOUNDS.length]!.id
+}
+
+/** Slider values (0–100) of a sound's extra controls, as its recipe has them. */
+export function extraDefaults(info: SoundInfo): Record<string, number> | undefined {
+  if (!info.extras) return undefined
+  return Object.fromEntries(info.extras.map((e) => [e.id, e.default]))
 }

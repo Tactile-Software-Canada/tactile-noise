@@ -9,8 +9,14 @@ export interface Render {
 }
 
 /** Renders `seconds` of a sound in 128-frame blocks, like the AudioWorklet does. */
-export function render(id: SoundId, seconds: number, intensity?: number, seed = SEED): Render {
-  const gen = createGenerator(id, SR, seed, intensity)
+export function render(
+  id: SoundId,
+  seconds: number,
+  intensity?: number,
+  seed = SEED,
+  params?: Record<string, number>,
+): Render {
+  const gen = createGenerator(id, SR, seed, intensity, 0, params)
   const total = Math.round(seconds * SR)
   const left = new Float32Array(total)
   const right = new Float32Array(total)

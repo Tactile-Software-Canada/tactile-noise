@@ -18,6 +18,10 @@ export function favoriteDetails(f: Favorite): string {
   const parts = [`Volume ${f.volume}%`]
   if (info.intensityLabel && f.intensity !== 50)
     parts.push(`${info.intensityLabel} ${f.intensity}%`)
+  for (const e of info.extras ?? []) {
+    const v = f.extras?.[e.id] ?? e.default
+    if (v !== e.default) parts.push(`${e.label} ${v}%`)
+  }
   if (f.tilt !== 0) parts.push(f.tilt < 0 ? `Warmer ${-f.tilt}%` : `Brighter ${f.tilt}%`)
   return parts.join(' · ')
 }
