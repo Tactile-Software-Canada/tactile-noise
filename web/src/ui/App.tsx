@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'preact/hooks'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks'
 import type { AudioEngine, EngineState } from '../audio/engine'
 import { formatClock, formatRemaining } from '../audio/levels'
 import { setupMediaSession, updateMediaSession } from '../audio/mediaSession'
@@ -94,6 +94,11 @@ export function App({ engine, initialSound, forceOnboarding = false }: Props) {
   const sound = soundInfo(settings.sound)
   const per = settings.perSound[settings.sound]
   const volume = settings.withMedia ? settings.mediaVolume : settings.volume
+
+  // The sound's hue drives the app's accent color (see --accent in styles.css).
+  useLayoutEffect(() => {
+    document.documentElement.style.setProperty('--hue', String(sound.hue))
+  }, [sound.hue])
 
   // Updates the ref synchronously too, so an action right after an update
   // (playing a favorite) sees the new settings.

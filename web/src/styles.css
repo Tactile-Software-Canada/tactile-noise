@@ -10,13 +10,15 @@
   --text: #ece9e3;
   --muted: #aeb6c1;
   --border: #323d4c;
-  --accent: #9cc3e6;
-  --accent-strong: #b8d5ef;
+  /* --hue is set on <html> from the playing sound (App.tsx); 210 is the default blue. */
+  --accent: hsl(var(--hue, 210) 62% 76%);
+  --accent-strong: hsl(var(--hue, 210) 66% 85%);
   --accent-text: #0c1520;
-  --accent-soft: rgba(156, 195, 230, 0.14);
+  --accent-soft: hsl(var(--hue, 210) 62% 76% / 0.14);
   --glow-alpha: 0.32;
+  /* Lightness of the play button's per-sound color (--hue): lighter on dark. */
+  --play-l: 72%;
   --danger: #ffb4a8;
-  --focus: #ffd479;
   --shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
   /* Wave tokens: Nocturnal terracotta */
   --wave-layer-1: #161210;
@@ -37,13 +39,13 @@
     --text: #1b2129;
     --muted: #4c545e;
     --border: #d2c9b9;
-    --accent: #2b5b86;
-    --accent-strong: #1f4566;
+    --accent: hsl(var(--hue, 210) 55% 30%);
+    --accent-strong: hsl(var(--hue, 210) 56% 22%);
     --accent-text: #ffffff;
-    --accent-soft: rgba(43, 91, 134, 0.1);
+    --accent-soft: hsl(var(--hue, 210) 55% 30% / 0.1);
     --glow-alpha: 0.22;
+    --play-l: 28%;
     --danger: #a3271a;
-    --focus: #8a5a00;
     --shadow: 0 10px 40px rgba(60, 50, 30, 0.18);
     /* Wave tokens: Reference terracotta/sand palette */
     --wave-layer-1: #ead0ac;
@@ -64,13 +66,13 @@
   --text: #1b2129;
   --muted: #4c545e;
   --border: #d2c9b9;
-  --accent: #2b5b86;
-  --accent-strong: #1f4566;
+  --accent: hsl(var(--hue, 210) 55% 30%);
+  --accent-strong: hsl(var(--hue, 210) 56% 22%);
   --accent-text: #ffffff;
-  --accent-soft: rgba(43, 91, 134, 0.1);
+  --accent-soft: hsl(var(--hue, 210) 55% 30% / 0.1);
   --glow-alpha: 0.22;
+  --play-l: 28%;
   --danger: #a3271a;
-  --focus: #8a5a00;
   --shadow: 0 10px 40px rgba(60, 50, 30, 0.18);
   /* Wave tokens: Reference terracotta/sand palette */
   --wave-layer-1: #ead0ac;
@@ -132,8 +134,7 @@ button:disabled {
 }
 
 :focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 3px;
+  outline: none;
 }
 
 h1,
@@ -290,7 +291,8 @@ p {
   flex-direction: column;
   align-items: center;
   gap: 14px;
-  padding: 24px 16px 16px;
+  /* Extra room above the button so the breathing halos aren't clipped. */
+  padding: 3.5rem 16px 16px;
   overflow: hidden;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -313,11 +315,13 @@ p {
 }
 
 .play {
+  /* The sound's glow color, more saturated. */
+  --play-color: hsl(var(--hue) 78% var(--play-l));
   position: relative;
-  width: 10.5rem;
-  height: 10.5rem;
+  width: 8.5rem;
+  height: 8.5rem;
   border-radius: 50%;
-  border: 2px solid var(--accent);
+  border: 2px solid var(--play-color);
   background: var(--surface-2);
   color: var(--accent);
   display: flex;
@@ -336,7 +340,7 @@ p {
 
 [data-status='playing'] .play,
 [data-status='starting'] .play {
-  background: var(--accent);
+  background: var(--play-color);
   color: var(--accent-text);
 }
 
@@ -358,7 +362,7 @@ p {
   background: radial-gradient(
     closest-side,
     transparent 62%,
-    color-mix(in srgb, var(--accent) 38%, transparent) 86%,
+    hsl(var(--hue) 70% 55% / 0.45) 86%,
     transparent
   );
   opacity: 0;
@@ -604,12 +608,6 @@ p {
   color: var(--accent);
 }
 
-.sound-tile input:focus-visible + .tile-body,
-.chip input:focus-visible + span {
-  outline: 3px solid var(--focus);
-  outline-offset: 2px;
-}
-
 /* Small "now playing" bars on the selected tile. */
 .eq {
   position: absolute;
@@ -701,10 +699,6 @@ p {
   border-radius: calc(var(--radius-sm) - 2px);
   background: transparent;
   color: inherit;
-}
-
-.fav:focus-visible {
-  outline-offset: -3px;
 }
 
 .fav svg {
@@ -1036,11 +1030,6 @@ input[type='number'] {
   color: inherit;
 }
 
-.choice input:focus-visible + .choice-body {
-  outline: 3px solid var(--focus);
-  outline-offset: 2px;
-}
-
 /* ---------- Sheets (dialogs) ---------- */
 
 .sheet {
@@ -1300,11 +1289,6 @@ input[type='number'] {
   transform: scale(0.95);
 }
 
-.stepper-btn:focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 2px;
-}
-
 .stepper-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
@@ -1340,11 +1324,6 @@ input[type='number'] {
   transform: scale(0.96);
 }
 
-.quick-chip:focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 2px;
-}
-
 .quick-chip:disabled {
   opacity: 0.35;
   cursor: not-allowed;
@@ -1352,7 +1331,7 @@ input[type='number'] {
 
 .quick-chip.preset-chip {
   background: var(--accent-soft);
-  border-color: rgba(156, 195, 230, 0.3);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
   color: var(--accent);
 }
 
