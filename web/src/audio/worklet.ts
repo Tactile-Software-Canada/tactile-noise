@@ -38,11 +38,19 @@ class GeneratorProcessor extends AudioWorkletProcessor {
     super(options)
     const opts = options.processorOptions as ProcessorOptions
     const sound = isSoundId(opts.sound) ? opts.sound : 'balanced'
-    this.generator = createGenerator(sound, sampleRate, opts.seed, opts.intensity, opts.tone)
+    this.generator = createGenerator(
+      sound,
+      sampleRate,
+      opts.seed,
+      opts.intensity,
+      opts.tone,
+      opts.params,
+    )
     this.stats = opts.stats === true
     this.port.onmessage = (event: MessageEvent<ProcessorMessage>) => {
       const msg = event.data
       if (msg.type === 'intensity') this.generator.setIntensity(msg.value)
+      else if (msg.type === 'param') this.generator.setParam(msg.id, msg.value)
       else if (msg.type === 'tone') this.generator.setTone?.(msg.value)
       else if (msg.type === 'stats') this.stats = msg.enabled
       else if (msg.type === 'dispose') this.alive = false

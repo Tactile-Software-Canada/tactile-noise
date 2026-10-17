@@ -13,6 +13,17 @@ describe('sound catalog', () => {
     for (const c of ids) expect(SOUNDS.some((s) => s.category === c)).toBe(true)
   })
 
+  it('gives every extra control a unique id and a default in range', () => {
+    for (const s of SOUNDS) {
+      const ids = (s.extras ?? []).map((e) => e.id)
+      expect(new Set(ids).size).toBe(ids.length)
+      for (const e of s.extras ?? []) {
+        expect(e.default).toBeGreaterThanOrEqual(0)
+        expect(e.default).toBeLessThanOrEqual(100)
+      }
+    }
+  })
+
   it('cycles through sounds in both directions', () => {
     const first = SOUNDS[0]!.id
     const last = SOUNDS[SOUNDS.length - 1]!.id

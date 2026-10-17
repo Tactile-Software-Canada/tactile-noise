@@ -71,8 +71,10 @@ export function createGenerator(
   seed: number,
   intensity = DEFAULT_INTENSITY,
   tone = 0,
+  params: Readonly<Record<string, number>> = {},
 ): Generator {
   const inner = new FACTORIES[id](sampleRate, new Rng(seed), intensity)
+  for (const [key, value] of Object.entries(params)) inner.setParam(key, value)
   const trim = TRIMS[id]
   const toneStage = new Tone(sampleRate, tone)
   const render = (left: Float32Array, right: Float32Array) => {
@@ -84,6 +86,7 @@ export function createGenerator(
   }
   return {
     setIntensity: (v) => inner.setIntensity(v),
+    setParam: (key, v) => inner.setParam(key, v),
     setTone: (v) => toneStage.set(v),
     render(left, right) {
       if (left.length <= MAX_BLOCK) {

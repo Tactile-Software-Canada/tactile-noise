@@ -1,5 +1,5 @@
 import type { SoundSettings } from '../settings'
-import type { SoundInfo } from '../sounds'
+import { extraDefaults, type SoundInfo } from '../sounds'
 import { Slider } from './controls'
 import { Sheet } from './Sheet'
 
@@ -17,7 +17,11 @@ export function toneText(t: number): string {
 }
 
 export function AdjustSheet({ open, onClose, sound, value, onChange }: Props) {
-  const isDefault = value.intensity === 50 && value.tilt === 0
+  const extras = sound.extras ?? []
+  const isDefault =
+    value.intensity === 50 &&
+    value.tilt === 0 &&
+    extras.every((e) => (value.extras?.[e.id] ?? e.default) === e.default)
   return (
     <Sheet id="adjust-sheet" title={`Adjust ${sound.name}`} open={open} onClose={onClose}>
       {sound.intensityLabel && (
@@ -34,6 +38,25 @@ export function AdjustSheet({ open, onClose, sound, value, onChange }: Props) {
           onInput={(v) => onChange({ intensity: v })}
         />
       )}
+      {extras.map((e) => {
+        const v = value.extras?.[e.id] ?? e.default
+        return (
+          <Slider
+            key={e.id}
+            id={`extra-${e.id}`}
+            label={e.label}
+            hint={e.hint}
+            min={0}
+            max={100}
+            value={v}
+            valueText={`${v} percent`}
+            display={`${v}%`}
+            stepButtons
+            step={5}
+            onInput={(next) => onChange({ extras: { ...value.extras, [e.id]: next } })}
+          />
+        )
+      })}
       <Slider
         id="tilt"
         label="Tone"
@@ -52,7 +75,7 @@ export function AdjustSheet({ open, onClose, sound, value, onChange }: Props) {
         class="secondary"
         disabled={isDefault}
         data-testid="adjust-reset"
-        onClick={() => onChange({ intensity: 50, tilt: 0 })}
+        onClick={() => onChange({ intensity: 50, tilt: 0, extras: extraDefaults(sound) })}
       >
         Reset to default
       </button>

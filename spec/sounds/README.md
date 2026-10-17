@@ -14,6 +14,9 @@ proving any future port sounds the same. The reference implementation is
 - **Processing:** audio is rendered in chunks of 32 samples. Slow parameters (envelopes,
   filter cut-offs, event rates, intensity smoothing) update once per chunk; every stage then
   processes the chunk in place. Nothing allocates while rendering (a test enforces it).
+- **Extra controls:** a few sounds have more sliders than intensity and tone (see their
+  recipes). Each is 0–1 (UI shows 0–100%), applied to events as they start or smoothed, and
+  its default reproduces the recipe, loudness trim and golden data exactly.
 - **Intensity:** 0–1 (UI shows 0–100%), default 0.5, smoothed with a 0.5 s time constant.
   "i" below.
 - **Loudness:** each sound is multiplied by a trim so it measures **−22 LUFS** (BS.1770,
@@ -123,7 +126,10 @@ shape: more bass, a dip where the ear is most sensitive.
 - Per channel: (0.7·brown + 0.3·pink) → two 1-pole LPs at 320 + 600·i Hz, plus pink →
   1-pole HP 900 Hz × 0.035, all × (0.9 + 0.2·wander 8 s).
 - Engine drone: (sin + 0.4·sin 2×) at 88 Hz (left) and 88.35 Hz (right), so they beat
-  slowly, × (0.02 + 0.02·i).
+  slowly, × (0.02 + 0.02·i) × engine volume.
+- Extra control **engine volume** (0–1, default 0.5) scales the drone only, never the roar or
+  hiss: gain 0 at 0, 1 at 0.5, 4 at 1 (squared curve below 0.5, linear above), smoothed with a
+  50 ms time constant.
 
 **Train**
 
@@ -133,7 +139,12 @@ shape: more bass, a dip where the ear is most sensitive.
   axles at 0, 2.5, 17 and 19.5 m (two bogies) cross it at those distances ÷ v. Each axle:
   burst 120–220 Hz, Q 1.5, amp 0.5–0.9 (rear bogie ×0.8), attack 2 ms, decay 80–130 ms, plus
   a click: burst 1.5–3 kHz, Q 1, amp ×0.18, decay 15 ms. Pan −0.15 (front bogie) /
-  +0.15 (rear).
+  +0.15 (rear). All axle amplitudes are multiplied by the bump volume gain.
+- Extra control **bump randomness** r (0–1, default 0): the rail gap is multiplied by a uniform
+  draw from 1 ± j, with j = 0.03 + 0.67·r, so the mean rhythm is unchanged but r = 1 gives gaps
+  of 0.3–1.7 × the nominal one.
+- Extra control **bump volume** (0–1, default 0.5): gain 0 at 0 (no bumps at all), 1 at 0.5,
+  6 at 1 (squared curve below 0.5, linear above).
 
 ## Golden data
 

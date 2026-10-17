@@ -12,6 +12,11 @@ export interface Generator {
   /** Overwrites `left` and `right` with the next block of audio. */
   render(left: Float32Array, right: Float32Array): void
   setIntensity(value: number): void
+  /**
+   * Sets a sound's extra control (see `extras` in sounds.ts) to a value in 0–1.
+   * Ids a sound doesn't have are ignored.
+   */
+  setParam(id: string, value: number): void
   /** Tone/warmth, −1 (warmer) … 1 (brighter). Only on generators from createGenerator. */
   setTone?(value: number): void
 }
@@ -40,6 +45,8 @@ export abstract class BlockGenerator implements Generator {
   setIntensity(value: number): void {
     this.intensity.target = clamp01(value)
   }
+
+  setParam(_id: string, _value: number): void {}
 
   render(left: Float32Array, right: Float32Array): void {
     const n = left.length
@@ -131,6 +138,15 @@ export function trimAndClip(buf: Float32Array, gain: number): void {
     const a = Math.abs(x)
     buf[i] = a <= KNEE ? x : Math.sign(x) * (KNEE + SPAN * Math.tanh((a - KNEE) / SPAN))
   }
+}
+
+/**
+ * Gain for an extra volume control (0–1): silent at 0, the recipe's own level
+ * at 0.5 (the default, so the calibrated loudness holds), `max` at 1.
+ */
+export function boostGain(value: number, max: number): number {
+  const v = clamp01(value)
+  return v <= 0.5 ? 4 * v * v : 1 + (max - 1) * (2 * v - 1)
 }
 
 export function clamp01(v: number): number {

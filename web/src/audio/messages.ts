@@ -8,6 +8,8 @@ export interface ProcessorOptions {
   intensity: number
   /** −1 (warmer) … 1 (brighter). */
   tone: number
+  /** Extra controls (0–1) by id, for the sounds that have them. */
+  params: Record<string, number>
   /** Report render load once a second (Settings → Diagnostics). */
   stats: boolean
 }
@@ -16,6 +18,7 @@ export interface ProcessorOptions {
 export type ProcessorMessage =
   | { type: 'intensity'; value: number }
   | { type: 'tone'; value: number }
+  | { type: 'param'; id: string; value: number }
   | { type: 'stats'; enabled: boolean }
   | { type: 'dispose' }
 

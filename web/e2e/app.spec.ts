@@ -226,6 +226,66 @@ test('adjust sheet: intensity and tone are saved per sound', async ({ page }) =>
   await expect(dialog.locator('#intensity')).toHaveValue('50')
 })
 
+test('adjust sheet: Train and Airplane have their own extra sliders', async ({ page }) => {
+  const dialog = page.locator('#adjust-sheet')
+  const open = async (sound: string) => {
+    await soundRadio(page, sound).check()
+    await page.getByTestId('open-adjust').click()
+    await expect(dialog).toBeVisible()
+  }
+
+  // Sounds without extras don't show any.
+  await open('rain')
+  await expect(dialog.locator('[id^="extra-"]')).toHaveCount(0)
+  await page.keyboard.press('Escape')
+
+  await open('train')
+  await expect(dialog.locator('#extra-bumpRandomness')).toHaveValue('0')
+  await expect(dialog.locator('#extra-bumpVolume')).toHaveValue('50')
+  await dialog.locator('#extra-bumpRandomness').fill('70')
+  await dialog.locator('#extra-bumpVolume').fill('90')
+  await page.keyboard.press('Escape')
+
+  await open('airplane')
+  await expect(dialog.locator('#extra-engineVolume')).toHaveValue('50')
+  await dialog.locator('#extra-engineVolume').fill('20')
+  await page.keyboard.press('Escape')
+
+  // Each sound keeps its own, and Reset puts them back.
+  await open('train')
+  await expect(dialog.locator('#extra-bumpRandomness')).toHaveValue('70')
+  await expect(dialog.locator('#extra-bumpVolume')).toHaveValue('90')
+  await dialog.getByTestId('adjust-reset').click()
+  await expect(dialog.locator('#extra-bumpRandomness')).toHaveValue('0')
+  await expect(dialog.locator('#extra-bumpVolume')).toHaveValue('50')
+  await page.keyboard.press('Escape')
+  await open('airplane')
+  await expect(dialog.locator('#extra-engineVolume')).toHaveValue('20')
+})
+
+test('adjust sheet: extra sliders reach the playing sound and favorites', async ({ page }) => {
+  const dialog = page.locator('#adjust-sheet')
+  await soundRadio(page, 'train').check()
+  await page.getByTestId('play').click()
+  await expectPlaying(page, 'train')
+  await page.getByTestId('open-adjust').click()
+  await dialog.locator('#extra-bumpVolume').fill('80')
+  await page.keyboard.press('Escape')
+  await page.getByTestId('favorite').click()
+  const saved = page.locator('[data-testid="favorite-item"][data-sound="train"]')
+  await expect(saved).toHaveCount(1)
+
+  // Changing the extra means the current mix is no longer the saved one.
+  await page.getByTestId('open-adjust').click()
+  await dialog.locator('#extra-bumpVolume').fill('30')
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('favorite')).toHaveAttribute('aria-pressed', 'false')
+  await saved.click()
+  await expect(page.getByTestId('favorite')).toHaveAttribute('aria-pressed', 'true')
+  await page.getByTestId('open-adjust').click()
+  await expect(dialog.locator('#extra-bumpVolume')).toHaveValue('80')
+})
+
 test('manifest shortcut URL pre-selects a sound', async ({ page }) => {
   await page.goto('./?sound=stream')
   await expect(soundRadio(page, 'stream')).toBeChecked()
