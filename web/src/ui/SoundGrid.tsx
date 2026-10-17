@@ -24,7 +24,6 @@ export const SoundGrid = pure(function SoundGrid({ selected, playing, onSelect }
           </h3>
           <div class="sound-grid">
             {SOUNDS.filter((s) => s.category === cat.id).map((s) => {
-              const index = SOUNDS.indexOf(s)
               const isSelected = selected === s.id
               return (
                 <label class="sound-tile" key={s.id} style={{ '--hue': s.hue }}>
@@ -35,7 +34,6 @@ export const SoundGrid = pure(function SoundGrid({ selected, playing, onSelect }
                     checked={isSelected}
                     onChange={() => onSelect(s.id)}
                     aria-describedby={`desc-${s.id}`}
-                    aria-keyshortcuts={index < 9 ? String(index + 1) : undefined}
                   />
                   <span class="tile-body">
                     <Icon path={s.icon} size={26} />

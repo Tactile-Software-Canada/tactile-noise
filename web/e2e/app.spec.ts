@@ -1,10 +1,13 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import {
+  DESKTOP_UA,
+  IPHONE_UA,
   engineState,
   expectPlaying,
   expectStatus,
   level,
+  outputRadio,
   skipOnboarding,
   soundRadio,
   volumeSlider,
@@ -50,36 +53,82 @@ test('every sound plays', async ({ page }) => {
 })
 
 test('switching playback mode mid-playback keeps playing', async ({ page }) => {
-  const output = page.locator('#output')
   await page.getByTestId('open-settings').click()
-  await output.selectOption('direct')
+  await outputRadio(page, 'direct').check()
   await page.keyboard.press('Escape')
   await page.getByTestId('play').click()
   await expect.poll(() => level(page), { timeout: 5000 }).toBeGreaterThan(-60)
   await page.getByTestId('open-settings').click()
-  await output.selectOption('media')
+  await outputRadio(page, 'media').check()
   await page.keyboard.press('Escape')
   await page.waitForTimeout(1500)
   await expectPlaying(page, 'balanced')
   await expect.poll(() => level(page)).toBeGreaterThan(-60)
 })
 
-test('"make quieter" is only offered when mixing with other audio', async ({ page }) => {
-  await page.getByTestId('open-settings').click()
-  const withMedia = page.locator('#with-media')
-  await expect(withMedia).toHaveCount(0)
-  await page.locator('#output').selectOption('direct')
-  await withMedia.check()
-  await page.locator('#media-volume').selectOption('10')
-  await page.keyboard.press('Escape')
-  await expect(volumeSlider(page)).toHaveValue('10')
+// The default test device is a Pixel 7, so these run on Android.
+test.describe('playback mode on Android', () => {
+  test('"make quieter" is only offered when mixing with other audio', async ({ page }) => {
+    await page.getByTestId('open-settings').click()
+    const withMedia = page.locator('#with-media')
+    await expect(withMedia).toHaveCount(0)
+    await outputRadio(page, 'direct').check()
+    await withMedia.check()
+    await page.locator('#media-volume').selectOption('10')
+    await page.keyboard.press('Escape')
+    await expect(volumeSlider(page)).toHaveValue('10')
 
-  // Back to media controls: the option goes away and the normal volume returns.
-  await page.getByTestId('open-settings').click()
-  await page.locator('#output').selectOption('media')
-  await expect(withMedia).toHaveCount(0)
-  await page.keyboard.press('Escape')
-  await expect(volumeSlider(page)).toHaveValue('40')
+    // Back to media controls: the option goes away and the normal volume returns.
+    await page.getByTestId('open-settings').click()
+    await outputRadio(page, 'media').check()
+    await expect(withMedia).toHaveCount(0)
+    await page.keyboard.press('Escape')
+    await expect(volumeSlider(page)).toHaveValue('40')
+  })
+
+  test('playback mode is the first thing in settings', async ({ page }) => {
+    await page.getByTestId('open-settings').click()
+    const first = page.locator('#settings-sheet .settings-section').first()
+    await expect(first.locator('input[name="output"]')).toHaveCount(2)
+    await expect(outputRadio(page, 'media')).toBeChecked()
+  })
+})
+
+test.describe('playback mode off Android', () => {
+  test('desktop has no playback mode setting', async ({ browser }) => {
+    const context = await browser.newContext({ userAgent: DESKTOP_UA })
+    const page = await context.newPage()
+    await skipOnboarding(page)
+    await page.goto('./')
+    await page.getByTestId('open-settings').click()
+    await expect(page.locator('#settings-sheet')).toBeVisible()
+    await expect(page.locator('input[name="output"]')).toHaveCount(0)
+    await context.close()
+  })
+
+  test('iOS has no playback mode, and a saved "mix" setting is ignored', async ({ browser }) => {
+    const context = await browser.newContext({ userAgent: IPHONE_UA })
+    const page = await context.newPage()
+    await skipOnboarding(page)
+    await page.addInitScript(() => {
+      const raw = localStorage.getItem('ben-gen:settings:v1')
+      const current = raw ? JSON.parse(raw) : {}
+      localStorage.setItem(
+        'ben-gen:settings:v1',
+        JSON.stringify({ ...current, output: 'direct', withMedia: true }),
+      )
+    })
+    await page.goto('./')
+    await page.getByTestId('open-settings').click()
+    await expect(page.locator('input[name="output"]')).toHaveCount(0)
+    await page.keyboard.press('Escape')
+    await page.getByTestId('play').click()
+    await expectPlaying(page)
+    expect(
+      await page.evaluate(() => (window as any).benGen.engine.mediaElement.paused as boolean),
+    ).toBe(false)
+    await context.close()
+  })
 })
 
 test('remembers settings across reloads', async ({ page }) => {
@@ -175,26 +224,6 @@ test('adjust sheet: intensity and tone are saved per sound', async ({ page }) =>
   await expect(dialog.locator('#intensity')).toHaveValue('80')
   await dialog.getByTestId('adjust-reset').click()
   await expect(dialog.locator('#intensity')).toHaveValue('50')
-})
-
-test('keyboard shortcuts', async ({ page }) => {
-  const body = page.locator('body')
-  await body.press('5')
-  await expect(soundRadio(page, 'rain')).toBeChecked()
-  await body.press(']')
-  await expect(soundRadio(page, 'ocean')).toBeChecked()
-  await body.press('[')
-  await expect(soundRadio(page, 'rain')).toBeChecked()
-  await body.press('Space')
-  await expectPlaying(page, 'rain')
-  await body.press('ArrowUp')
-  await expect(volumeSlider(page)).toHaveValue('45')
-  await body.press('Space')
-  await expectStatus(page, 'stopped')
-  await body.press('t')
-  await expect(page.locator('#timer-sheet')).toBeVisible()
-  await page.keyboard.press('Escape')
-  await expect(page.locator('#timer-sheet')).toBeHidden()
 })
 
 test('manifest shortcut URL pre-selects a sound', async ({ page }) => {
@@ -311,6 +340,26 @@ test('Apple install card has no accessibility violations', async ({ browser }) =
   expect(results.violations).toEqual([])
 
   await context.close()
+})
+
+test.describe('playback mode accessibility', () => {
+  test('has no accessibility violations in the playback mode section', async ({ page }) => {
+    await page.getByTestId('open-settings').click()
+    await outputRadio(page, 'direct').check()
+    await expect(page.locator('#with-media')).toBeVisible()
+    await page.evaluate(() =>
+      Promise.all(
+        document
+          .getAnimations()
+          .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+          .map((a) => a.finished),
+      ),
+    )
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+      .analyze()
+    expect(results.violations).toEqual([])
+  })
 })
 
 for (const colorScheme of ['dark', 'light'] as const) {

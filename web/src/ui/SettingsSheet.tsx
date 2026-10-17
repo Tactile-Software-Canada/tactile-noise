@@ -1,9 +1,16 @@
 import { useEffect, useState } from 'preact/hooks'
-import type { AudioEngine, Diagnostics } from '../audio/engine'
-import { checkForUpdates, isIos, isMacSafari, promptInstall, type PwaState } from '../pwa'
+import type { AudioEngine, Diagnostics, OutputMode } from '../audio/engine'
+import {
+  checkForUpdates,
+  isAndroid,
+  isIos,
+  isMacSafari,
+  promptInstall,
+  type PwaState,
+} from '../pwa'
 import { FADE_IN_OPTIONS, type Settings, type Theme } from '../settings'
 import { SOUNDS } from '../sounds'
-import { ChipGroup, Select, Switch } from './controls'
+import { ChipGroup, ChoiceCards, Select, Switch } from './controls'
 import { Icon } from './Icon'
 import { ICONS } from './icons'
 import { Sheet } from './Sheet'
@@ -28,6 +35,56 @@ export function SettingsSheet(p: Props) {
 
   return (
     <Sheet id="settings-sheet" title="Settings" open={p.open} onClose={p.onClose}>
+      {isAndroid() && (
+        <section class="settings-section" aria-labelledby="set-mode">
+          <h3 id="set-mode">Playback mode</h3>
+          <ChoiceCards<OutputMode>
+            name="output"
+            legend="Playback mode"
+            value={s.output}
+            options={[
+              [
+                'media',
+                'With media controls',
+                'Play and stop from notifications and the lock screen. Music or videos in other apps may stop it.',
+              ],
+              [
+                'direct',
+                'Mix with other audio',
+                'Keeps playing alongside music or videos in other apps, without notification or lock-screen controls.',
+              ],
+            ]}
+            onChange={(v) => {
+              p.update({ output: v })
+              p.engine.setOutput(v)
+              // The quieter volume is only offered when mixing; drop back to the normal one.
+              if (v === 'media' && s.withMedia) p.onWithMedia(false)
+            }}
+          />
+          {s.output === 'direct' && (
+            <>
+              <Switch
+                id="with-media"
+                label="Make quieter while media is playing"
+                hint={`Switch to a quieter volume (${s.mediaVolume}%) while music or video plays.`}
+                checked={s.withMedia}
+                onChange={p.onWithMedia}
+              />
+              <Select
+                id="media-volume"
+                label="“Media is playing” volume"
+                value={s.mediaVolume}
+                options={[5, 10, 15, 20, 25, 30, 40, 50].map((v) => [v, `${v}%`])}
+                onChange={(v) => {
+                  p.update({ mediaVolume: v })
+                  if (s.withMedia) p.engine.setVolume(v)
+                }}
+              />
+            </>
+          )}
+        </section>
+      )}
+
       <section class="settings-section" aria-labelledby="set-playback">
         <h3 id="set-playback">Playback</h3>
         <Select
@@ -37,47 +94,6 @@ export function SettingsSheet(p: Props) {
           options={FADE_IN_OPTIONS.map((v) => [v, v === 0 ? 'Off' : `${v} seconds`])}
           onChange={(v) => p.update({ fadeInSeconds: v })}
         />
-        <Select
-          id="output"
-          label="Playback mode"
-          hint={
-            s.output === 'media'
-              ? 'Shows play/stop controls in notifications and on the lock screen. Music or videos started in other apps may stop it.'
-              : 'Keeps playing alongside music or videos in other apps, but without notification or lock-screen controls.'
-          }
-          value={s.output}
-          options={[
-            ['media', 'With media controls (recommended)'],
-            ['direct', 'Mix with other audio'],
-          ]}
-          onChange={(v) => {
-            p.update({ output: v })
-            p.engine.setOutput(v)
-            // The quieter volume is only offered when mixing; drop back to the normal one.
-            if (v === 'media' && s.withMedia) p.onWithMedia(false)
-          }}
-        />
-        {s.output === 'direct' && (
-          <>
-            <Switch
-              id="with-media"
-              label="Make quieter while media is playing"
-              hint={`Switch to a quieter volume (${s.mediaVolume}%) while music or video plays.`}
-              checked={s.withMedia}
-              onChange={p.onWithMedia}
-            />
-            <Select
-              id="media-volume"
-              label="“Media is playing” volume"
-              value={s.mediaVolume}
-              options={[5, 10, 15, 20, 25, 30, 40, 50].map((v) => [v, `${v}%`])}
-              onChange={(v) => {
-                p.update({ mediaVolume: v })
-                if (s.withMedia) p.engine.setVolume(v)
-              }}
-            />
-          </>
-        )}
         <Switch
           id="mono"
           label="Mono audio"
@@ -191,21 +207,6 @@ export function SettingsSheet(p: Props) {
             Replay tour
           </button>
         </div>
-        <details class="help">
-          <summary>Keyboard shortcuts</summary>
-          <dl class="shortcuts">
-            <dt>Space</dt>
-            <dd>Play or stop</dd>
-            <dt>↑ ↓ or ← →</dt>
-            <dd>Volume (hold Shift for 1% steps)</dd>
-            <dt>1–9</dt>
-            <dd>Choose one of the first nine sounds</dd>
-            <dt>[ and ]</dt>
-            <dd>Previous or next sound</dd>
-            <dt>T</dt>
-            <dd>Sleep timer</dd>
-          </dl>
-        </details>
         <details class="help">
           <summary>About</summary>
           <p>

@@ -18,6 +18,12 @@ export function isIos(
   )
 }
 
+export function isAndroid(
+  nav: Navigator = typeof navigator !== 'undefined' ? navigator : ({} as Navigator),
+): boolean {
+  return /Android/.test(nav?.userAgent || '')
+}
+
 export function isMac(
   nav: Navigator = typeof navigator !== 'undefined' ? navigator : ({} as Navigator),
 ): boolean {

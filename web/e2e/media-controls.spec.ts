@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { expectPlaying, expectStatus, skipOnboarding, soundRadio } from './helpers'
+import { expectPlaying, expectStatus, outputRadio, skipOnboarding, soundRadio } from './helpers'
 
 /** State of the <audio> element behind the media controls, and of the Media Session. */
 const media = (page: Page) =>
@@ -49,17 +49,19 @@ test('stops when the system pauses the media (phone call, another app)', async (
   await expectStatus(page, 'stopped')
 })
 
-test('"Mix with other audio" plays without the media element', async ({ page }) => {
-  await page.getByTestId('open-settings').click()
-  await page.locator('#output').selectOption('direct')
-  await page.keyboard.press('Escape')
-  await page.getByTestId('play').click()
-  await expectPlaying(page)
-  expect((await media(page)).paused).toBe(true)
-  // Switching back while playing brings the controls back.
-  await page.getByTestId('open-settings').click()
-  await page.locator('#output').selectOption('media')
-  await expect.poll(async () => (await media(page)).paused).toBe(false)
+test.describe('mixing with other audio (Android)', () => {
+  test('"Mix with other audio" plays without the media element', async ({ page }) => {
+    await page.getByTestId('open-settings').click()
+    await outputRadio(page, 'direct').check()
+    await page.keyboard.press('Escape')
+    await page.getByTestId('play').click()
+    await expectPlaying(page)
+    expect((await media(page)).paused).toBe(true)
+    // Switching back while playing brings the controls back.
+    await page.getByTestId('open-settings').click()
+    await outputRadio(page, 'media').check()
+    await expect.poll(async () => (await media(page)).paused).toBe(false)
+  })
 })
 
 test('iOS/WebKit-only quirk: requests a "playback" audio session when the API exists', async ({

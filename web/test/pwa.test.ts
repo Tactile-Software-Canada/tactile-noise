@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isAppleDevice, isIos, isMac, isMacSafari } from '../src/device'
+import { isAndroid, isAppleDevice, isIos, isMac, isMacSafari } from '../src/device'
 
 describe('pwa Apple device detection', () => {
   it('detects iPhone', () => {
@@ -98,6 +98,24 @@ describe('pwa Apple device detection', () => {
     expect(isMac(nav)).toBe(false)
     expect(isMacSafari(nav)).toBe(false)
     expect(isAppleDevice(nav)).toBe(false)
+    expect(isAndroid(nav)).toBe(true)
+  })
+
+  it('does not classify iPhone or desktop as Android', () => {
+    const iphone = {
+      userAgent:
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+      platform: 'iPhone',
+      maxTouchPoints: 5,
+    } as unknown as Navigator
+    const desktop = {
+      userAgent:
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      platform: 'Linux x86_64',
+      maxTouchPoints: 0,
+    } as unknown as Navigator
+    expect(isAndroid(iphone)).toBe(false)
+    expect(isAndroid(desktop)).toBe(false)
   })
 
   it('does not classify Windows as Apple device', () => {

@@ -159,6 +159,50 @@ export function Select<T extends string | number>({
   )
 }
 
+interface ChoiceCardsProps<T extends string | number> {
+  name: string
+  legend: string
+  value: T
+  /** [value, title, subtitle] */
+  options: [T, string, string][]
+  onChange(v: T): void
+}
+
+/** Mutually exclusive buttons side by side, each with a descriptive subtitle (native radios). */
+export function ChoiceCards<T extends string | number>({
+  name,
+  legend,
+  value,
+  options,
+  onChange,
+}: ChoiceCardsProps<T>) {
+  return (
+    <fieldset class="choice-cards">
+      <legend>{legend}</legend>
+      <div class="choices">
+        {options.map(([v, title, subtitle]) => (
+          <label class="choice" key={String(v)}>
+            <input
+              type="radio"
+              name={name}
+              value={String(v)}
+              checked={value === v}
+              aria-describedby={`${name}-${String(v)}-desc`}
+              onChange={() => onChange(v)}
+            />
+            <span class="choice-body">
+              <span class="choice-title">{title}</span>
+              <span class="choice-desc" id={`${name}-${String(v)}-desc`}>
+                {subtitle}
+              </span>
+            </span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  )
+}
+
 interface ChipGroupProps<T extends string | number> {
   name: string
   legend: string

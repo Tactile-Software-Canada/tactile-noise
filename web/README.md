@@ -9,7 +9,7 @@ and travel); fine volume with ±1% buttons and a quieter "media is playing" volu
 intensity and tone; sleep timer with fade-out, end time and +15 min; up to six favorites;
 media controls in the notification shade and lock screen (with next/previous sound);
 light/dark/system theme; a large audio buffer for gap-free playback on slower phones (by design, controls respond ~0.3 s later); install prompt and home-screen shortcuts; updates that wait until
-nothing is playing; diagnostics; keyboard shortcuts.
+nothing is playing; diagnostics.
 
 ## Develop
 
@@ -98,14 +98,15 @@ login page, and Chrome couldn't fetch `/.well-known/assetlinks.json` to verify i
 
 ### Media controls and playing with the screen off
 
-In the default **Advanced → Playback mode → With media controls**, the app also loops a
+In the default **Settings → Playback mode → With media controls**, the app also loops a
 10-second, inaudible `<audio>` file (an 8 Hz tone at −54 dBFS, see
 `src/audio/keepalive.ts`). Chrome and Firefox only show notification, lock-screen and
 headset controls for a real media element playing something longer than 5 seconds; Web Audio
 and MediaStream playback get none. That element also makes the browser treat the page as
 playing media, which helps keep it running with the screen off. The trade-off: starting music
 or a video in another app may stop the sound. **Mix with other audio** skips the element, so
-it keeps playing alongside other apps, but without media controls.
+it keeps playing alongside other apps, but without media controls. The Playback mode
+setting is shown only on Android, the one platform where mixing works.
 
 Some phones (Samsung, Xiaomi, OnePlus…) still stop background apps aggressively:
 

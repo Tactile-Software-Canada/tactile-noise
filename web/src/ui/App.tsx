@@ -6,6 +6,7 @@ import type { SoundId } from '../audio/soundIds'
 import {
   applyUpdate,
   getPwaState,
+  isAndroid,
   isAppleDevice,
   isIos,
   promptInstall,
@@ -23,7 +24,7 @@ import {
   type Settings,
   type SoundSettings,
 } from '../settings'
-import { SOUNDS, adjacentSound, soundInfo } from '../sounds'
+import { adjacentSound, soundInfo } from '../sounds'
 import { AdjustSheet } from './AdjustSheet'
 import { BrandIcon } from './BrandIcon'
 import { Favorites } from './Favorites'
@@ -50,6 +51,11 @@ const THEME_COLORS = { dark: '#0e1218', light: '#f3f0e9' }
 export function App({ engine, initialSound, forceOnboarding = false }: Props) {
   const [settings, setSettings] = useState<Settings>(() => {
     const s = loadSettings()
+    // Mixing with other audio only works on Android; elsewhere there is no setting for it.
+    if (!isAndroid()) {
+      s.output = 'media'
+      s.withMedia = false
+    }
     return initialSound ? { ...s, sound: initialSound } : s
   })
   const [engineState, setEngineState] = useState<EngineState>(engine.getState())
@@ -312,38 +318,6 @@ export function App({ engine, initialSound, forceOnboarding = false }: Props) {
     const id = setTimeout(() => setToast(null), 5000)
     return () => clearTimeout(id)
   }, [toast])
-
-  // ---- keyboard -------------------------------------------------------------
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.altKey || e.ctrlKey || e.metaKey) return
-      if (document.querySelector('dialog[open]')) return
-      const t = e.target as HTMLElement
-      if (t.closest('input, select, textarea, button, summary, [contenteditable]')) return
-      if (e.key === ' ') {
-        e.preventDefault()
-        toggle()
-      } else if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
-        e.preventDefault()
-        setVolume(Math.min(100, volume + (e.shiftKey ? 1 : 5)))
-      } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
-        e.preventDefault()
-        setVolume(Math.max(0, volume - (e.shiftKey ? 1 : 5)))
-      } else if (/^[1-9]$/.test(e.key)) {
-        const s = SOUNDS[Number(e.key) - 1]
-        if (s) selectSound(s.id)
-      } else if (e.key === ']') {
-        stepSound(1)
-      } else if (e.key === '[') {
-        stepSound(-1)
-      } else if (e.key === 't' || e.key === 'T') {
-        setSheet('timer')
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  })
 
   // ---- render ---------------------------------------------------------------
 

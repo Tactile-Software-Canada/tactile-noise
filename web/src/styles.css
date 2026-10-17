@@ -963,6 +963,84 @@ input[type='number'] {
   font-weight: 650;
 }
 
+.choice-cards {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.choice-cards legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-weight: 550;
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 26rem) {
+  .choices {
+    grid-template-columns: 1fr;
+  }
+}
+
+.choice {
+  position: relative;
+  display: flex;
+  cursor: pointer;
+}
+
+.choice input {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.choice-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.choice-title {
+  font-weight: 650;
+}
+
+.choice-desc {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.choice input:checked + .choice-body {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.choice input:checked + .choice-body .choice-desc {
+  color: inherit;
+}
+
+.choice input:focus-visible + .choice-body {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
 /* ---------- Sheets (dialogs) ---------- */
 
 .sheet {
@@ -1343,7 +1421,6 @@ details.help a {
   text-underline-offset: 2px;
 }
 
-.shortcuts,
 .diag {
   display: grid;
   grid-template-columns: max-content 1fr;
@@ -1351,12 +1428,10 @@ details.help a {
   margin: 8px 0 0;
 }
 
-.shortcuts dt,
 .diag dt {
   font-weight: 600;
 }
 
-.shortcuts dd,
 .diag dd {
   margin: 0;
   color: var(--muted);

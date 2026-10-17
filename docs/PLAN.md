@@ -247,7 +247,7 @@ larger screens). On wide screens the now-playing card sits beside the sound libr
 - **Adjust panel:** intensity (where the sound has one) and tone, saved per sound; reset.
 - **Settings panel:** fade-in, playback mode, mono, "media is playing" volume; theme
   (system/dark/light); install, version and updates, reset; diagnostics (generator load,
-  dropouts where the browser reports them, latency); keyboard shortcuts and about.
+  dropouts where the browser reports them, latency); about.
 - **App behaviour:** an install card when the browser offers installation; "ready to work
   offline" notice; updates download in the background and are offered only while nothing is
   playing (never a surprise reload); media controls with next/previous sound.
@@ -261,8 +261,7 @@ Accessibility requirements (these are acceptance criteria, not nice-to-haves):
 - Follows `prefers-color-scheme` (dark by default at night is fine), `prefers-reduced-motion`
   (no animated visualizer when reduced motion is set), and `prefers-contrast`
 - No flashing content, no sudden sounds, no auto-start without consent
-- Keyboard shortcuts: Space (play/stop), arrows (volume), 1–9 (pick sound), [ ] (previous/next
-  sound), T (sleep timer)
+- ~~Keyboard shortcuts~~ (removed, TSOFT-186)
 - Manifest `shortcuts`: "Play Rain", "Play Dark noise", and so on, for one-tap launch from the
   home-screen icon (long press)
 

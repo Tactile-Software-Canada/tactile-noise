@@ -21,7 +21,6 @@ export interface SoundInfo {
   hue: number
 }
 
-/** Display order is also the keyboard shortcut order (1–9). */
 export const SOUNDS: SoundInfo[] = [
   {
     id: 'balanced',

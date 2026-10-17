@@ -30,6 +30,16 @@ export const level = (page: Page) =>
 export const soundRadio = (page: Page, id: string) =>
   page.locator(`input[name="sound"][value="${id}"]`)
 
+export const DESKTOP_UA =
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+
+export const IPHONE_UA =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1'
+
+/** The Playback mode radios (Android only). */
+export const outputRadio = (page: Page, mode: 'media' | 'direct') =>
+  page.locator(`input[name="output"][value="${mode}"]`)
+
 export const volumeSlider = (page: Page) => page.locator('#volume')
 
 /** Marks onboarding as seen before the app loads. */
