@@ -1,6 +1,6 @@
-# Ben's Noise Generator
+# Tactile Noise
 
-`ben-gen` for short. An app that plays continuous ambient sound (balanced/bright/dark noise, rain, ocean, stream, fire, and more) to
+An app that plays continuous ambient sound (balanced/bright/dark noise, rain, ocean, stream, fire, and more) to
 help with focus, sensory overload, tinnitus masking, and sleep. It works like the built-in
 _Background Sounds_ feature in iOS and macOS.
 
@@ -44,7 +44,7 @@ check, type check, unit and end-to-end tests and build, and checks that the Andr
 builds and that `android/twa-manifest.json` matches `app.config.json`. It doesn't deploy,
 sign or upload anything.
 
-iOS is not targeted.
+iOS via the App Store is not currently targeted, but may be in the future via Capacitor or PWABuilder.
 
 ## Forks
 
