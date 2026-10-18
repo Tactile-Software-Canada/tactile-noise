@@ -106,6 +106,8 @@
 html {
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  overscroll-behavior: none;
 }
 
 body {
@@ -115,6 +117,8 @@ body {
   font-family: var(--font);
   font-size: 1.0625rem;
   line-height: 1.5;
+  touch-action: manipulation;
+  overscroll-behavior: none;
 }
 
 button,

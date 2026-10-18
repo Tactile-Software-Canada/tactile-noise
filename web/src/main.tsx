@@ -7,6 +7,22 @@ import './styles.css'
 
 initPwa()
 
+// Prevent iOS Safari pinch-to-zoom gesture events
+document.addEventListener('gesturestart', (e) => e.preventDefault())
+document.addEventListener('gesturechange', (e) => e.preventDefault())
+document.addEventListener('gestureend', (e) => e.preventDefault())
+
+// Prevent multi-touch pinch zoom
+document.addEventListener(
+  'touchstart',
+  (e) => {
+    if (e.touches.length > 1) {
+      e.preventDefault()
+    }
+  },
+  { passive: false },
+)
+
 // Manifest shortcuts open ./?sound=rain. Browsers need a tap before audio can
 // start, so the sound is pre-selected and the Play button does the rest.
 const params = new URLSearchParams(location.search)
