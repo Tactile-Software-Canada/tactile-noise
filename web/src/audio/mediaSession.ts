@@ -35,8 +35,10 @@ export function updateMediaSession(title: string | null, playing: boolean): void
   const ms = navigator.mediaSession
   if (!ms) return
   if (title && typeof MediaMetadata !== 'undefined') {
+    // Use the full-bleed maskable icon: iOS Now Playing fills transparent
+    // corners with white and applies its own rounded-corner mask.
     const icon = (size: number) => ({
-      src: new URL(`icons/icon-${size}.png`, document.baseURI).href,
+      src: new URL(`icons/maskable-${size}.png`, document.baseURI).href,
       sizes: `${size}x${size}`,
       type: 'image/png',
     })
