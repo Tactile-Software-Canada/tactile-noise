@@ -5,7 +5,7 @@ help with focus, sensory overload, tinnitus masking, and sleep. It works like th
 _Background Sounds_ feature in iOS and macOS.
 
 It's an installable, fully offline **Progressive Web App (PWA)**, live at
-https://noise.tactile.software, and it's sold on **Google Play** as *Tactile Noise*. The Play
+https://noise.tactile.software, and will be available on **Google Play** as *Tactile Noise*. The Play
 app is a Trusted Web Activity: a thin Android shell that opens the same site full-screen in
 Chrome. All app code lives in the PWA, so a web deploy updates both.
 
